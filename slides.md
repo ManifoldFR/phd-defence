@@ -10,6 +10,10 @@ info: |
   ## My PhD defence
 
   Presentation slides for developers.
+
+addons:
+  - tldraw
+
 # apply unocss classes to the current slide
 class: text-left
 # https://sli.dev/features/drawing
@@ -61,18 +65,151 @@ The last comment block of each slide will be treated as slide notes. It will be 
 
 ---
 
-# Robot control
+## Robot control
 
-<tldraw class="w-200 h-140" />
+The basic problem goes like this:
+<div class="ml-40">
+<img src="/control-law.svg" alt="control law" class="h-100 place-self-center"></img>
+</div>
+
+---
+layout: top-title
+align: c
+---
+
+:: title ::
+
+# Robot control: two ways
+
+:: content ::
+
+
+<div class="grid grid-cols-2">
+  <div>
+
+  ## Optimal control
+
+  $$
+  \begin{aligned}
+    \min_{\bm{x}, \bm{u}}%
+    &\sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N) \\
+    \mathrm{s.t.}~%
+    &f_t(x_t, u_t, x_{t+1}) = 0 \\
+    &g_t(x_t, u_t) \leq 0 \\
+    &g_N(x_N) \leq 0.
+  \end{aligned}
+  $$
+
+  </div>
+  <div>
+
+  ## Reinforcement learning
+
+  $$
+    \max_\theta J(\theta) = \mathbb{E}_{
+        s_{t+1} \sim p(\cdot|x_t, u_t), u_t\sim \pi_\theta(\cdot|x_t)
+    }\left[
+        r_t(s_t, a_t) 
+      \right]
+  $$
+
+  </div>
+</div>
 
 
 ---
 
 # Introduction: Why make tailored solvers?
 
+- Ipopt has a lot of heuristics
+
+
+---
+layout: section
+---
+
+# Augmented Lagrangians
+
 ---
 
 # Introduction: ALM
+
+
+
+
+---
+layout: top-title
+---
+
+:: title ::
+
+# Benchmarks
+
+:: content ::
+
+- Compare against other nonlinear solvers ALTRO (tailored for OCP) and IPOPT (generic nonlinear solver)
+  - Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
+- Set of three benchmark problems
+
+---
+
+<div class="ml-20">
+
+![solo_times](/bench/solo_yoga_perfprofile_time.png)
+
+**Performance profile** SOLO-12 "Yoga" benchmark.
+</div>
+
+---
+
+## SOLO-12 "Yoga" task
+
+A very nonlinear task for a whole-body model, 4 contact phases...
+
+<video controls loop autoplay class="h-4/5">
+  <source src="/solo12_lift_paw.mp4" type="video/mp4">
+</video>
+
+---
+
+<div class="ml-20">
+
+  ![ur10_ballistic_times](/bench/ur10_ballistic_perfprofile_time.png)
+
+  **Performance profile** UR10 "ballistics" task.
+</div>
+
+---
+
+## UR10 "Ballistic" task
+
+- Underactuated system
+- Hard constraint on projectile final's position
+
+<video controls loop autoplay class="h-90">
+  <source src="/ur10_mug_throw.mp4" type="video/mp4">
+</video>
+
+---
+layout: two-cols-title
+columns: is-5
+---
+:: title ::
+# Deploying constrained MPC
+
+:: left ::
+
+**Whole-body jumping on Unitree GO-2**
+
+* Constraints: joint torque limits, friction cones, landing ($z(t_\text{contact}) = 0$)
+* Real-time on consumer-grade CPU, using the parallel Riccati recursion (~5ms per iteration)
+
+:: right ::
+
+<video controls loop autoplay class="w-full">
+  <source src="/quadru_jump2.mp4" type="video/mp4">
+</video>
+
 
 ---
 
@@ -580,7 +717,7 @@ Learn more: [Mermaid Diagrams](https://sli.dev/features/mermaid) and [PlantUML D
 ---
 foo: bar
 dragPos:
-  square: 691,32,167,_,-16
+  square: -148,0,0,0
 ---
 
 # Draggable Elements
@@ -606,7 +743,7 @@ Double-click on the draggable elements to edit their positions.
 </v-drag>
 ```
 
-<v-drag pos="663,206,261,_,-15"undefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefined>
+<v-drag pos="663,206,261,_,-15"undefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefinedundefined>
   <div text-center text-3xl border border-main rounded>
     Double-click me!
   </div>
