@@ -1,0 +1,19 @@
+{
+  "name": "phd-defence",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "slidev build",
+    "dev": "slidev --open",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@slidev/cli": "^0.50.0-beta.5",
+    "@slidev/theme-default": "latest",
+    "@slidev/theme-seriph": "latest",
+    "slidev-addon-tldraw": "^0.3.0",
+    "slidev-theme-neversink": "^0.3.6",
+    "vue": "^3.5.12"
+  },
+  "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72"
+}
