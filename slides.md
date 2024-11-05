@@ -232,7 +232,7 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 
 ---
 
-### UR10 "Ballistic" task
+### UR10 "ballistic" task
 
 - Underactuated system
 - Hard constraint on projectile final's position
