@@ -69,7 +69,7 @@ color: light
 
 Each stage required either more refined control schemes or perception methods.
 
-* mobile vacuums: required advances in planning and mapping;
+* mobile vacuums: required advances in planning and mapping (e.g. SLAM);
 * legged robots: required advances in real-time **control**.
 
 <div class="absolute bottom-0">
@@ -77,15 +77,21 @@ Each stage required either more refined control schemes or perception methods.
   Sources: KUKA: [Wikipedia](https://commons.wikimedia.org/wiki/File:KUKA_Industrial_Robots_IR.jpg); Dyson 360 robot: [dyson.com.au](https://edition.cnn.com/cnn-underscored/reviews/dyson-360-vis-nav-robot-vacuum)
 </div>
 
+:: note ::
+
+Sources: KUKA: [Wikipedia](https://commons.wikimedia.org/wiki/File:KUKA_Industrial_Robots_IR.jpg); Dyson 360 robot: [dyson.com.au](https://edition.cnn.com/cnn-underscored/reviews/dyson-360-vis-nav-robot-vacuum)
+
 ---
-layout: default
+layout: top-title
 ---
+:: title ::
 
 ## Robot control: the problem
 
+:: content ::
+
 <div class="grid grid-cols-2 gap-4">
   <div>
-    The basic problem goes like this:
     <img src="/control-loop.drawio.svg" alt="control law" class="h-80 place-self-center"></img>
   </div>
   <div class="mt-10">
@@ -100,62 +106,6 @@ layout: default
 
 ---
 layout: top-title
----
-
-:: title ::
-
-## Robot control: two ways
-
-:: content ::
-
-<div class="grid grid-cols-2">
-  <div>
-
-  ## Optimal control
-
-  * Models map from sensors, to **state**, to **control**
-
-  <img src="/optctrl.drawio.svg" alt="control law" class="w-full place-self-center"></img>
-
-  <div v-click>
-
-  Solve and extract $\textcolor{green}{u_0}$ from:
-  $$
-  \begin{aligned}
-    \min_{\bm{x}, \textcolor{green}{\bm{u}} }%
-    &\sum_{t=0}^{N-1} \ell_t(x_t, \textcolor{green}{u_t}) + \ell_N(x_N) \\
-    \mathrm{s.t.}~%
-    &f_t(x_t, \textcolor{green}{u_t}, x_{t+1}) = 0 \ \text{(dynamics)} \\
-    &g_t(x_t, \textcolor{green}{u_t} ) \leq 0 \ \text{(path constraints)} \\
-    &g_N(x_N) \leq 0 \ \text{(term. constraint)}
-  \end{aligned}
-  $$
-  </div>
-
-  </div>
-  <div>
-
-  ## Reinforcement learning
-
-  * **Learn** the mapping from sensors to **control**
-  * Still use **models** in the simulator to learn!
-
-  <img src="/deeprl.drawio.svg" alt="control law" class="w-full place-self-center"></img>
-
-  <div v-click>
-
-  $$
-    \min_{\textcolor{red}{\theta}\in\Theta} \mathbb{E}_{u_t\sim \pi_{\textcolor{red}{\theta}}(x_t)}\left[
-        \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N) \right]
-  $$
-  </div>
-
-  </div>
-</div>
-
----
-layout: top-title
-hideInToc: true
 ---
 
 :: title ::
@@ -190,6 +140,65 @@ hideInToc: true
 </div>
 
 ---
+layout: top-title
+hideInToc: true
+---
+
+:: title ::
+
+## Robot control: two ways
+
+:: content ::
+
+<div class="grid grid-cols-2">
+  <div>
+
+  ## Optimal control
+
+  * Models map from sensors, to **state**, to **control**
+
+  <img src="/optctrl.drawio.svg" alt="control law" class="w-full place-self-center"></img>
+
+  <div v-click>
+
+  Solve, get $\textcolor{green}{u_0}$ from an **optimal control problem**:
+  $$
+  \begin{aligned}
+    \min_{\bm{x}, \textcolor{green}{\bm{u}} }%
+    &\sum_{t=0}^{N-1} \ell_t(x_t, \textcolor{green}{u_t}) + \ell_N(x_N) \\
+    \mathrm{s.t.}~%
+    &f_t(x_t, \textcolor{green}{u_t}, x_{t+1}) = 0 \ \text{(dynamics)} \\
+    &g_t(x_t, \textcolor{green}{u_t} ) \leq 0 \ \text{(path constraints)} \\
+    &g_N(x_N) \leq 0 \ \text{(term. constraint)}
+  \end{aligned}
+  $$
+  </div>
+
+  </div>
+  <div>
+
+  ## Reinforcement learning
+
+  <div v-click>
+
+  * **Learn** the mapping from sensors to **control**
+  * (Mostly) still use **models** in the simulator to learn (but not at "inference" time)
+
+  <img src="/deeprl.drawio.svg" alt="control law" class="w-full place-self-center"></img>
+  </div>
+
+  <div v-click>
+
+  $$
+    \min_{\textcolor{red}{\theta}\in\Theta} \mathbb{E}_{u_t\sim \pi_{\textcolor{red}{\theta}}(x_t)}\left[
+        \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N) \right]
+  $$
+  </div>
+
+  </div>
+</div>
+
+---
 
 ## What is the optimal control problem (OCP) ?
 
@@ -200,51 +209,87 @@ $$
   &J(\bm{x}, \bm{u}) = \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N) \\
   \mathrm{s.t.}~%
   &f_t(x_t, u_t, x_{t+1}) = 0 \\
-  &g_t(x_t, u_t) \leq 0 \\
-  &g_N(x_N) \leq 0.
+  &g_t(x_t, u_t) \leqslant 0 \\
+  &g_N(x_N) \leqslant 0.
 \end{aligned}
 $$
 
-<div v-click>
+<v-clicks>
 
 * **Unknowns:** System states $\bm{x} = (x_0,\ldots,x_N)$ / Control inputs $\bm{u} = (u_0,...,u_{N-1})$
+* $N$ is the **time horizon** of the problem
 * $J(\bm{x}, \bm{u})$ the **cost function** (e.g. distance to target, magnitude of controls $u$...)
-* $g_t\leq 0$ and $g_N\leq 0$ are the **path constraints** for the system (obstacles, velocity limits, ...)
-* $f_t(x_t, u_t, x_{t+1}) = 0$ defines _discrete dynamics_ $(x_t,u_t) \mapsto x_{t+1}$ (e.g. **robot dynamics**)
+* $f_t = 0$ defines *discrete dynamics* $(x_t,u_t) \mapsto x_{t+1}$ (e.g. **robot dynamics**)
+* $g_t\leqslant 0$ and $g_N\leqslant 0$ are the **path constraints** for the system (obstacles, velocity limits, ...)
 
-</div>
-
----
-
-It is a **nonlinear program** with _lots_ of variables but with a **specific structure**.
-
-
+</v-clicks>
 
 ---
 
 ## Why make tailored solvers?
+
+The OCP is a **nonlinear program** with *lots* of variables but with a **specific structure**.
+
+<div v-click class="grid grid-cols-3 gap-3">
+
+  <img src="/meshcat-ur5-transparent.png" alt="ur5" class="w-fit place-self-center grid-col-span-1" />
+
+  <div class="grid-col-span-2">
+
+  These are the dimensions of an OCP with $N=100$ knots on a simple UR5 robot arm with *just* the dynamics (see left):
+  <v-click at="2">
+
+  | **State size** | **Control size** | **Horizon $N$** | Total num. variables | Num. constraints |
+  | -------------- | ---------------- |---------------- | -------------------- | ---------------- |
+  |  14            |   7              |     100         | 2114                 | 1414             |
+
+  **Hessian of cost:** 2114 $\times$ 2114 = ~4.5M entries!
+  **Only 1.6% are nonzero.**
+
+  **Jacobian of constaints:** 2114 $\times$ 1414 = ~2.3M entries!
+  **Only 0.99% are nonzero.**
+  </v-click>
+  </div>
+
+</div>
+
+---
+hideInToc: true
+---
+
+## Why make tailored solvers? (II)
+
+**Large-scale** and **structured** problem means:
 
 * Need for **large-scale** nonlinear solvers
 * A generic solver like IPOPT:
   * has a lot of heuristics to perform well on generic problems
   * handles generic sparsity patterns
 * A tailored solver:
-  * **less heuristics** (maybe)
-  * faster by exploiting **specific structure**, perhaps **real-time**
+  * **less heuristics** (maybe, hopefully)
+  * faster by exploiting **specific structure**, perhaps become... **real-time.**
 
 ---
 
 ## Proposals
 
-**Question:** Can we a variant of the **augmented Lagrangian method (ALM)** to design a new solver for constrained MPC?
+**Question:** Can we a variant of the **augmented Lagrangian method (ALM)** to design a new solver for constrained OCPs?
 
 * ALM is simple to understand and implement, a pragmatic choice
 * not a new idea for numerical OC
+* can we make it run in **real-time** for MPC?
 
-**Contribution** A new ALM-based 
+<v-click>
 
+**Contributions:**
 
+* A new, primal-dual ALM algorithm for solving OCPs
+* Specific factorizations for the **specific large scale linear systems** involved
+* A performant library that can be used for **solving problems offline** *or* for **real-time control**
+</v-click>
 
+---
+hideInToc: true
 ---
 
 ## Publications
@@ -253,15 +298,15 @@ This thesis has led to the following publications:
 
 <div class="!children:text-0.52em">
 
-### Main contributions
+### Main and related contributions
 
 1. **WJ**, N. Mansard, and J. Carpentier, ‘Implicit Differential Dynamic Programming’, in 2022 International Conference on Robotics and Automation (ICRA), Philadelphia, United States: IEEE, May 2022. doi: 10.1109/ICRA46639.2022.9811647.
 2. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘ProxNLP: a primal-dual augmented Lagrangian solver for nonlinear programming in Robotics and beyond’, in 6th Workshop on Legged Robots, Philadelphia, Pennsylvania, United States, May 2022. Accessed: Oct. 10, 2022.
 3. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘Constrained Differential Dynamic Programming: A primal-dual augmented Lagrangian approach’, in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Kyoto, Japan, Oct. 2022.
 4. **WJ**, A. Bambade, E. Arlaud, S. El-Kazdadi, N. Mansard, and J. Carpentier, ‘PROXDDP: Proximal Constrained Trajectory Optimization’, 2023, *submitted to IEEE Transactions on Robotics (T-RO), (under revision)*
-5. **WJ**, E. Dantec, E. Arlaud, N. Mansard, and J. Carpentier, ‘Parallel and Proximal Constrained Linear-Quadratic Methods for Real-Time Nonlinear MPC’, in Proceedings of Robotics: Science and Systems, Delft, Netherlands, Jul. 2024. doi: 10.15607/RSS.2024.XX.002.
-6. E. Ménager, A. Bilger, **WJ**, J. Carpentier, and C. Duriez, ‘Condensed semi-implicit dynamics for trajectory optimization in soft robotics’, in IEEE International Conference on Soft Robotics (RoboSoft), San Diego (CA), United States: IEEE, Apr. 2024.
-7. E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the 2024 IEEE-RAS International Conference on Humanoid Robots, Nancy, France: IEEE, Jul. 2024.
+5. **WJ**, E. Dantec, E. Arlaud, N. Mansard, and J. Carpentier, ‘Parallel and Proximal Constrained Linear-Quadratic Methods for Real-Time Nonlinear MPC’, in Proceedings of Robotics: Science and Systems (RSS), Delft, Netherlands, Jul. 2024. doi: 10.15607/RSS.2024.XX.002.
+6. <span class="text-orange">E. Ménager, A. Bilger, **WJ**, J. Carpentier, and C. Duriez, ‘Condensed semi-implicit dynamics for trajectory optimization in soft robotics’, in IEEE International Conference on Soft Robotics (RoboSoft), San Diego (CA), United States: IEEE, Apr. 2024.</span>
+7. <span class="text-orange">E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the 2024 IEEE-RAS International Conference on Humanoid Robots, Nancy, France: IEEE, Jul. 2024.</span>
 
 ### Other publications
 
@@ -293,8 +338,7 @@ layout: section
 ## ProxDDP: an ALM algorithm for constrained trajectory optimization
 
 
-<div class="absolute bottom-0">
-Reference papers:
+<div class="absolute bottom-0 text-0.6em">
 
 1. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘Constrained Differential Dynamic Programming: A primal-dual augmented Lagrangian approach’, in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems
 2. **WJ**, N. Mansard, and J. Carpentier, ‘Implicit Differential Dynamic Programming’, in 2022 International Conference on Robotics and Automation (ICRA), Philadelphia, United States
@@ -319,10 +363,13 @@ columns: is-8
 
 **[aligator]{.font-mono} is a C++17 OCP solver library for robotics and beyond.**
 
+<div class="ns-c-tight">
+
 * implements our ProxDDP algorithm
 * provides a modelling interface (using Pinocchio for robot dynamics)
 * comes with Python bindings
 * suitable for MPC!
+</div>
 
 ---
 layout: top-title
@@ -354,7 +401,7 @@ Assess multiple configurations of the solvers:
 
 A very nonlinear task for a whole-body model, 4 contact phases.
 
-<video controls loop autoplay class="h-4/5">
+<video controls loop autoplay class="h-4/5 place-self-center">
   <source src="/solo12_lift_paw.mp4" type="video/mp4">
 </video>
 
@@ -362,11 +409,9 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 
 ### SOLO-12 "Yoga": performance profile
 
-<div>
-
-![solo_times](/bench/solo_yoga_perfprofile_time.svg)
-
-</div>
+<img src="/bench/solo_yoga_perfprofile_time.svg" alt="solo_times"
+  class="place-self-center"
+/>
 
 ---
 
@@ -375,7 +420,7 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 * Underactuated system
 * Hard constraint on projectile final's position
 
-<video controls loop autoplay class="h-90">
+<video controls loop autoplay class="h-90 place-self-center">
   <source src="/ur10_mug_throw.mp4" type="video/mp4">
 </video>
 
@@ -383,11 +428,8 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 
 ### UR10 "ballistic" task: performance profile
 
-<div>
+<img src="/bench/ur10_ballistic_perfprofile_time.svg" alt="ur10_ballistic" class="place-self-center">
 
-  ![ur10_ballistic_times](/bench/ur10_ballistic_perfprofile_time.svg)
-
-</div>
 
 ---
 layout: top-title
@@ -444,7 +486,7 @@ columns: is-4
 
 :: right ::
 
-<video controls loop autoplay class="w-full">
+<video controls loop autoplay class="w-full place-self-center">
   <source src="/quadru_jump_edit.mp4" type="video/mp4">
 </video>
 
