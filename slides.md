@@ -1,9 +1,6 @@
 ---
 # You can also start simply with 'default'
 theme: neversink
-# random image from a curated Unsplash collection by Anthony
-# like them? see https://unsplash.com/collections/94734566/slidev
-background: https://cover.sli.dev
 title: "Real-time constrained trajectory optimisation in robotics: theory, implementation, and applications"
 info: |
   ## My PhD defence
@@ -50,12 +47,19 @@ Wilson Jallet<br>
 ---
 layout: section
 color: light
-hideInToc: true
 ---
 
-## TABLE OF CONTENTS
+### Table of contents
 
 <Toc columns=1 minDepth="1" maxDepth="1" mode="all" />
+
+---
+layout: section
+color: light
+---
+
+# Introduction
+
 
 ---
 layout: default
@@ -70,13 +74,15 @@ color: light
 
 **Classical industrial robotics**: fixed (closed) environment, everything known, **hard-coded** routines.
 
-<div class="ns-c-tight">
+<div v-click class="ns-c-tight">
 
-**In the future:**
+**Towards more autonomous robots:**
 
-* agile manufacturing, tasks & objects change
-* mobile vacuums: required advances in planning and mapping (e.g. SLAM);
-* legged robots: required advances in real-time **control**.
+* **unstructured** environments require **adaptiveness**
+* mobile robots: advances in planning and mapping (e.g. SLAM);
+* legged robots: advances in real-time **online control**
+* agile manufacturing: tasks & objects change, more complex environments
+
 </div>
 
 <div class="absolute bottom-0 text-0.6em">
@@ -231,7 +237,7 @@ The OCP is a **nonlinear program** with *lots* of variables but with a **specifi
   **Hessian of cost:** 2114 $\times$ 2114 = ~4.5M entries!
   **Only 0.99% are nonzero.**
 
-  **Jacobian of constaints:** 2114 $\times$ 1414 = ~3.0M entries!
+  **Jacobian of constraints:** 2114 $\times$ 1414 = ~3.0M entries!
   **Only 1.6% are nonzero.**
   </v-click>
   </div>
@@ -246,55 +252,59 @@ hideInToc: true
 
 **Large-scale** and **structured** problem means:
 
-<div class="grid grid-cols-3">
-<div class="grid-col-span-1 ns-c-tight">
-
 <v-clicks>
 
 * Need for **large-scale** nonlinear solvers. Those exist! But...
-* A generic solver like IPOPT:
-  * has a lot of heuristics to perform well on generic problems
-  * handles generic sparsity patterns
+* A *generic* solver like IPOPT handles *generic* sparsity patterns
 * A tailored solver:
-  * **less heuristics** (maybe, hopefully)
   * faster by exploiting **specific structure**, perhaps become... **[real-time.]{.text-red}**
 
 </v-clicks>
-</div>
 
-<div v-click="2" class="grid-col-span-2 center">
-  <img src="/ipopt-heuristics.png" alt="ipopt_lol" >
+---
 
-  <p class="place-self-center">
+## Strategies for nonlinear constraints
 
-  **Some heuristics from IPOPT's paper.**
-  </p>
-</div>
+The OCP is a *nonlinear problem* with *nonlinear constraints*.
+**How to deal with this?**
+
+<v-click>
+Literature for strategies on this goes back years. Main families of methods are:
+
+* (sequential) quadratic programming
+* interior-point methods
+* [augmented Lagrangian methods (ALM)]{.font-bold .text-orange}
+
+All can be implemented with specific attention to OCPs.
+
+</v-click>
+
+<div v-click>
+Our choice is ALM because:
+
+* easy to understand
+* simple to implement and pragmatic choice
+* versatile (equality constraints, inequality constraints, more...)
+
 </div>
 
 ---
 
-## Proposals
+## Problem statement
 
-**Question:** Can we use a variant of the **augmented Lagrangian method (ALM)** to design a new solver for constrained OCPs?
+**Questions:**
 
-<v-click>
+* Can we use a variant of the **augmented Lagrangian method (ALM)** to design a new solver for constrained OCPs?
+* Can we **keep it simple**, and solve multiple problems well?
+* Can we make it run in **real-time** for model-predictive control (MPC) ?
 
-* ALM is simple to understand and implement, a pragmatic choice
-* not a new idea for numerical OC
-* can we **keep it simple**, and solve multiple problems well?
-* can we make it run in **real-time** for model-predictive control (MPC) ?
+---
 
-</v-click>
-
-<v-click>
-
-**Contributions:**
+## Contributions
 
 * A new, primal-dual ALM algorithm for solving OCP 
 * A parallel linear solver for OCP
 * A performant library that can be used for **solving problems offline** *or* for **real-time control**
-</v-click>
 
 ---
 
@@ -322,6 +332,10 @@ hideInToc: true
   .footnote-item {
     font-size: 9px;
   }
+  .footnote-item p {
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
   .footnotes {
     position: absolute;
     bottom: 0;
@@ -337,7 +351,7 @@ hideInToc: true
 
 This thesis has led to the following publications:
 
-<div class="!children:text-0.52em">
+<div class="!children:text-0.56em">
 
 ### Main and related contributions
 
@@ -366,9 +380,10 @@ h3 {
 layout: section
 ---
 
-# Augmented Lagrangian algorithms for Nonlinear Programming and Optimal Control
+# Proximal algorithms for Nonlinear Programming and Optimal Control
+<hr>
 
-<Toc columns=1 minDepth="1" maxDepth="2" mode="onlyCurrentTree" />
+<Toc columns=1 minDepth="2" maxDepth="2" mode="onlyCurrentTree" />
 
 ---
 
@@ -442,6 +457,8 @@ layout: top-title
 
 :: content ::
 
+*New in revision of T-RO submission.*
+
 * Compare against other nonlinear solvers ALTRO (tailored for OCP) and IPOPT (generic NLP solver)
   * Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
 * Set of three benchmarks problems[^bench]
@@ -451,9 +468,9 @@ Assess multiple configurations of the solvers:
 
 * **ALTRO**/**IPOPT**: 2 configs each
 * **ProxDDP:** test configurations with... 
-  * ...different initial AL penalty $\mu_0 > 0$
-  * ...linear vs. nonlinear rollout
-  * ...nonmonotone linesearch parameters
+  * different initial AL penalty $\mu_0 > 0$
+  * linear vs. nonlinear rollout
+  * linesearch parameters
 
 </div>
 
@@ -476,30 +493,39 @@ Assess multiple configurations of the solvers:
 
 A very nonlinear task for a whole-body model, 4 contact phases.
 
-<video controls loop autoplay class="h-4/5 place-self-center">
+<video controls loop autoplay class="h-11/12 place-self-center">
   <source src="/solo12_lift_paw.mp4" type="video/mp4">
 </video>
 
 ---
 
-### SOLO-12 "Yoga": solve times vs problems solved
+### SOLO-12 "Yoga" task: solve times vs problems solved
 
 <img src="/bench/solo_yoga_solve_times.svg" alt="solo_times" class="place-self-center" />
 
 ---
 
-### SOLO-12 "Yoga": performance profile
+### SOLO-12 "Yoga" task: performance profile
 
 <img src="/bench/solo_yoga_perfprofile_time.svg" alt="solo_times" class="place-self-center" />
+
+<p class="absolute bottom-0 font-italic">
+  
+  **Performance profile:** no. of problems solved as function of how slower you are w.r.t. the fastest solver on a given problem.
+</p> 
 
 ---
 
 ### UR10 "ballistic" task
 
+<div class="ns-c-tight">
+
 * Underactuated system
 * Hard constraint on projectile final's position
 
-<video controls loop autoplay class="h-90 place-self-center">
+</div>
+
+<video controls loop autoplay class="h-11/12 place-self-center">
   <source src="/ur10_mug_throw.mp4" type="video/mp4">
 </video>
 
@@ -515,8 +541,17 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 
 <img src="/bench/ur10_ballistic_perfprofile_time.svg" alt="ur10_ballistic" class="place-self-center">
 
+---
+
+### Benchmarks: takeaway message
+
+ProxDDP overall performs well on the benchmark suite.
+
+* Competitive with IPOPT on the test set (in solve time)
 
 ---
+
+### Benchmarks: on standardisation
 
 Lack of a suite of standard benchmarks for robotics:
 
@@ -534,21 +569,19 @@ Lack of a suite of standard benchmarks for robotics:
   <p>[2] qpenchmark by S. Caron: https://github.com/qpsolvers/qpbenchmark</p>
 </div>
 
----
-
-ProxDDP overall performs well on the benchmark suite...
 
 ---
 
 # Going parallel for proximal DDP
 
-DDP-type methods, based on the **Riccati** algorithm, have a *fatal* flaw:
+DDP-type methods (or any method) based on the **Riccati** algorithm, have a *fatal* flaw:
 
 * inherently **linear in time** $\mathcal{O}(N)$
 * no way of exploiting **multicore architectures** !
 
 
 <div class="absolute bottom-0 text-0.7em">
+  Reference papers for this section:
 
   1. **WJ**, E. Dantec, E. Arlaud, N. Mansard, and J. Carpentier, ‘Parallel and Proximal Constrained Linear-Quadratic Methods for Real-Time Nonlinear MPC’, in _Proceedings of Robotics: Science and Systems_, Delft, Netherlands, Jul. 2024
   2. E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the _2024 IEEE-RAS International Conference on Humanoid Robots_, Nancy, France: IEEE, Jul. 2024
@@ -565,11 +598,11 @@ columns: is-4
 
 :: left ::
 
-#### Whole-body jumping on Unitree GO-2
+**Whole-body jumping on Unitree GO-2:**
 
 * Fixed flight/contact phases
 * Constraints: joint position & torque limits, landing $z(t_\text{contact}) = 0$...
-* Receding-horizon control, **whole problem  rotates including the constraints** (easy with aligator's API!)
+* Receding-horizon control, **whole problem rotates, including the constraints**
 * Real-time on modern CPU, using the **parallel Riccati recursion (~5ms per iteration)**
 
 :: right ::
@@ -577,6 +610,14 @@ columns: is-4
 <video controls loop autoplay class="w-full place-self-center">
   <source src="/quadru_jump_edit.mp4" type="video/mp4">
 </video>
+
+<div class="grid grid-cols-2 gap-6 w-fit center">
+<img src="/trombi/ewen.jpg" alt="ewen" class="h-36"/>
+<p>
+
+  **Ewen Dantec**
+</p>
+</div>
 
 ---
 
@@ -588,4 +629,19 @@ columns: is-4
 
 # Conclusion and perspectives
 
+---
 
+## A roadmap
+
+---
+layout: cover
+hideInToc: true
+---
+
+# Thank you!
+
+---
+hideInToc: true
+---
+
+## Backup slides
