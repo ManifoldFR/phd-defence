@@ -43,13 +43,6 @@ Wilson Jallet<br>
   <img src="/inr_logo_rouge.svg" alt="inria" class="h-10"></img>
 </div>
 
----
-layout: section
----
-
-### Table of contents
-
-<Toc columns=1 minDepth="1" maxDepth="1" mode="all" />
 
 ---
 layout: section
@@ -108,7 +101,7 @@ layout: top-title
   * Sensor data: **noisy**
   * Control law: **known transformation** from sensor data
   * Robot: **somewhat known**
-  * World: **imperfect**, **high variability**, **physics** (contact, friction...)
+  * World: **imperfect model**, **high variability**, **physics** (contact, friction...)
 
   </div>
 </div>
@@ -148,6 +141,17 @@ layout: top-title
   </div>
 </div>
 
+<!--
+OPTIMAL CONTROL:
+* The model is used to control the plant
+
+REINFORCEMENT LEARNING:
+* Model is STILL used for learning thru simulator
+* Modern approaches add **more and more information about the underlying system/invariants**
+
+**Hence** model-based control is still quite relevant in some ways
+-->
+
 ---
 layout: top-title
 hideInToc: true
@@ -159,31 +163,22 @@ hideInToc: true
 
 :: content ::
 
-<div class="grid grid-cols-2">
-  <div>
+<div class="grid grid-cols-3">
+  <div class="grid-col-span-1">
 
   ## Optimal control
 
   * Model-based mapping from sensors, to **state**, to **control**
   * For $u_t$: solve an **optimal control problem** (OCP).
-
-  <img src="/optctrl.drawio.svg" alt="control law" class="w-full place-self-center" />
+  * Close the loop: **model-predictive control** (MPC)
 
   </div>
-  <div>
 
-  ## Reinforcement learning
-
-  <div v-click>
-
-  * **Learn** the mapping from sensors to **control**
-  * (Mostly) still use **models** in the simulator to learn (but not at "inference" time)
-
-  <img src="/deeprl.drawio.svg" alt="control law" class="w-full place-self-center"></img>
-  </div>
-
+  <div class="grid-col-span-2 center">
+    <img src="/optctrl-zoom.drawio.svg" alt="control law" class="w-full place-self-center" />
   </div>
 </div>
+
 
 ---
 
@@ -204,16 +199,22 @@ $$
 <v-clicks>
 
 * **Unknowns:** System states $\bm{x} = (x_0,\ldots,x_N)$ / Control inputs $\bm{u} = (u_0,...,u_{N-1})$
-* $J(\bm{x}, \bm{u})$ the **cost function** (e.g. distance to target, magnitude of controls $u$...)
-* $f_t = 0$ defines *discrete-time dynamics* $(x_t,u_t) \mapsto x_{t+1}$ (e.g. **robot dynamics**)
-* $g_t\leqslant 0$ and $g_N\leqslant 0$ are the **path constraints** for the system (obstacles, velocity limits, ...).  
-  If there are no $g_t, g_N$, we say the OCP is **unconstrained**.
+* $J(\bm{x}, \bm{u})$ the **cost function**
+* $f_t = 0$: *discrete-time dynamics* $(x_t,u_t) \mapsto x_{t+1}$
+* $g_t\leqslant 0$ and $g_N\leqslant 0$: **path and terminal constraints**.  
+  No $g_t, g_N \Rightarrow$ OCP is "**unconstrained**".
 
 </v-clicks>
 
 ---
+layout: top-title
+---
+
+::title::
 
 ## Why make tailored solvers?
+
+::content::
 
 The OCP is a **nonlinear program** with *lots* of variables but with a **specific structure**.
 
@@ -242,20 +243,54 @@ The OCP is a **nonlinear program** with *lots* of variables but with a **specifi
 
 ---
 hideInToc: true
+layout: top-title
 ---
 
+::title::
+
 ## Why make tailored solvers? (II)
+
+::content::
+
+<div class="grid grid-cols-2">
+
+<div>
 
 **Large-scale** and **structured** problem means:
 
 <v-clicks>
 
-* Need for **large-scale** nonlinear solvers. Those exist! But...
-* A *generic* solver like IPOPT handles *generic* sparsity patterns
+* Encountering large sparse matrices (like on the right)... **exploit structure** to be fast!
+* Need for **large-scale** nonlinear solvers
+* But... *generic* solver like IPOPT handles *generic* sparsity patterns
+  * use a *generic* sparse solver (MUMPS, MA57...)
+  * can't exploit the specific pattern...
 * A tailored solver:
-  * faster by exploiting **specific structure**, perhaps become... **[real-time.]{.text-red}**
+  * faster by exploiting **specific structure**, become **[real-time.]{.text-red}**
 
 </v-clicks>
+</div>
+
+<div class="center">
+  <img src="/ur5_short_sparsity.svg" alt="ur5_pattern" class="w-full center" />
+
+  <p>
+
+  **Sparsity pattern for a simple reach task on UR5 robot.** The pattern repeats itself for larger $N$.
+  </p>
+</div>
+</div>
+
+<!--
+On UR5:
+
+* shown only short horizon because longer makes the plot unreadable
+* matrix has about 28k entries (most of them are zero, nonzeros are blue)
+* mix of dense and sparse structures
+
+WHY FASTER?
+* Dense blocks deserve **dense** operations (to get SIMD instructions on modern CPUs...)
+-->
 
 ---
 
@@ -265,24 +300,51 @@ The OCP is a *nonlinear problem* with *nonlinear constraints*.
 **How to deal with this?**
 
 <v-click>
+
 Literature for strategies on this goes back years. Main families of methods are:
 
 * (sequential) quadratic programming
 * interior-point methods
 * [augmented Lagrangian methods (ALM)]{.font-bold .text-orange}
 
-All can be implemented with specific attention to OCPs.
+**All can be implemented with specific attention to OCPs.**
 
 </v-click>
 
-<div v-click>
+<div v-click class="ns-c-tight">
+
 Our choice is ALM because:
 
 * easy to understand
 * simple to implement and pragmatic choice
 * versatile (equality constraints, inequality constraints, more...)
+* fairly straightforward to **warm-start**
 
 </div>
+
+<!-- [^1]: J. Nocedal and S. J. Wright, Numerical optimization, 2nd ed. in Springer series in operations research. New York: Springer, 2006. -->
+
+<!--
+There are a lot of methods. Best reference is Nocedal's book.
+
+ALM is easy to understand and get up and running.
+-->
+
+<style>
+  .footnote-item {
+    font-size: 11px;
+  }
+  .footnote-item p {
+    font-size: 11px;
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+  .footnotes {
+    position: absolute;
+    bottom: 0;
+    margin-right: 4em;
+  }
+</style>
 
 ---
 
@@ -291,16 +353,16 @@ Our choice is ALM because:
 **Questions:**
 
 * Can we use a variant of the **augmented Lagrangian method (ALM)** to design a new solver for constrained OCPs?
-* Can we **keep it simple**, and solve multiple problems well?
-* Can we make it run in **real-time** for model-predictive control (MPC) ?
+* Can we **keep it simple**, and **solve multiple problems well**?
+* Can we **make it real-time** for model-predictive control (MPC) ?
 
----
+<hr/>
 
-## Contributions
+**Contributions**
 
 * A new, primal-dual ALM algorithm for solving OCP 
-* A parallel linear solver for OCP
 * A performant library that can be used for **solving problems offline** *or* for **real-time control**
+* A parallel linear solver for OCP
 
 ---
 
@@ -308,27 +370,33 @@ Our choice is ALM because:
 
 <div class="ns-c-tight">
 
-* DDP[^mayneDDP] and variants such as FDDP[^0] - only for **unconstrained** OCPs
-* Hybrid DDP (2012)[^2]: based on ALM, from authors in the aerospace community
-* ALTRO[^3][^4]: based on ALM, for robotics, handles inequality & conic constraints
-* FATROP[^1]: uses an interior-point method
-* CSQP[^jordana]: structure-exploiting sequential quadratic programming (SQP)
+* DDP/FDDP[^0] - only for **unconstrained** OCPs
+
+**For constrained OCPs:**
+
+* FATROP[^1]: [interior-point method]{.text-blue}
+* CSQP[^jordana]: [sequential quadratic programming (SQP)]{.text-blue}
+* HPIPM[^Hpipm]: structure-exploiting [interior-point]{.text-blue} for QPs, used inside of Acados
+* ALTRO[^3]/ALTRO-C[^4]: based on ALM, but lacks simplicity and performance
+
+**Performance and robustness are still an issue.**
 
 </div>
 
-[^mayneDDP]: D. Q. Mayne, ‘A Second-order Gradient Method for Determining Optimal Trajectories of Non-linear Discrete-time Systems’, International Journal of Control, vol. 3, no. 1, pp. 85–95, Jan. 1966, doi: 10.1080/00207176608921369.
 [^0]: C. Mastalli et al., ‘Crocoddyl: An Efficient and Versatile Framework for Multi-Contact Optimal Control’, 2020 IEEE International Conference on Robotics and Automation (ICRA), pp. 2536–2542, May 2020, doi: 10.1109/ICRA40945.2020.9196673.
 [^1]: L. Vanroye, A. Sathya, J. De Schutter, and W. Decré, ‘FATROP : A Fast Constrained Optimal Control Problem Solver for Robot Trajectory Optimization and Control’, in 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Detroit, MI, USA: IEEE, Oct. 2023. doi: 10.1109/IROS55552.2023.10342336.
 [^2]: G. Lantoine and R. P. Russell, ‘A Hybrid Differential Dynamic Programming Algorithm for Constrained Optimal Control Problems. Part 1: Theory’, J Optim Theory Appl, vol. 154, no. 2, pp. 382–417, Aug. 2012, doi: 10.1007/s10957-012-0039-0.
 [^3]: T. A. Howell, B. E. Jackson, and Z. Manchester, ‘ALTRO: A Fast Solver for Constrained Trajectory Optimization’, in 2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Macau, China: IEEE, Nov. 2019, pp. 7674–7679. doi: 10.1109/IROS40897.2019.8967788.
 [^4]: B. E. Jackson, T. Punnoose, D. Neamati, K. Tracy, R. Jitosho, and Z. Manchester, ‘ALTRO-C: A Fast Solver for Conic Model-Predictive Control’, in 2021 IEEE International Conference on Robotics and Automation (ICRA), May 2021, pp. 7357–7364. doi: 10.1109/ICRA48506.2021.9561438.
 [^jordana]: A. Jordana, S. Kleff, A. Meduri, J. Carpentier, N. Mansard, and L. Righetti, ‘Stagewise Implementations of Sequential Quadratic Programming for Model-Predictive Control’, Dec. 2023.
+[^Hpipm]: G. Frison and M. Diehl, ‘HPIPM: a high-performance quadratic programming framework for model predictive control’, IFAC-PapersOnLine, vol. 53, no. 2, pp. 6563–6569, Jan. 2020.
 
 <style>
   .footnote-item {
     font-size: 9px;
   }
   .footnote-item p {
+    font-size: 9px;
     margin-top: 4px;
     margin-bottom: 0;
   }
@@ -374,10 +442,18 @@ h3 {
 
 ---
 layout: section
+hideInToc: true
+---
+
+## Overview
+
+<Toc columns=1 minDepth="1" maxDepth="1" mode="all" />
+
+---
+layout: section
 ---
 
 # Proximal algorithms for Nonlinear Programming and Optimal Control
-<hr>
 
 <Toc columns=1 minDepth="2" maxDepth="2" mode="onlyCurrentTree" />
 
@@ -389,21 +465,108 @@ Consider a mathematical program:
 
 $$
 \begin{aligned}
-  \min_z~& J(z) \\
+  \min_{z\in \mathbb{R}^n}~& f(z) \\
   \mathrm{s.t. }~& c(z) = 0
 \end{aligned}
 $$
 
-**Penalty-based methods** consist in dualizing it as a series of unconstrained minimizations:
+where $f$ is the objective and $c: \mathbb{R}^n \to \mathbb{R}^m$ the constraint.
 
-1. Solve $\min_z J(z) + \mu c(z)$, get solution $z_\mu$
+<v-click>
+
+**Penalty-based methods:** do a series of unconstrained minimizations:
+
+1. Solve $\min_z f(z) + \frac{1}{\mu} c(z)$, get solution $z_\mu$
 2. Increase $\mu$
 3. Go back to 1., "warm-start" from $z_\mu$.
 
+**Problem:** decrease $\mu$ to satisfy $c=0$, **blow up conditioning** (hard to solve step 1.)!
+
+</v-click>
+
+---
+
+Another route, using **optimality conditions**: optimal $z\in\mathbb{R}^n$ must be s.t. there is $\lambda\in\mathbb{R}^m$ satisfying
+$$
+\begin{aligned}
+  \nabla f(z) + J(z)^\top \lambda = 0&, \\
+  c(z) = 0&.
+\end{aligned}
+$$
+where $J(z) = \frac{\partial c}{\partial z}$ is the **constraint Jacobian**, and apply **Newton's method**:
+
+<v-clicks>
+
+1. get directions $\delta x$ and $\delta \lambda$ by **solving the system of equations**:
+   $$
+    \underbrace{\begin{bmatrix}
+      H & J^\top \\
+      J &
+    \end{bmatrix}}_{\mathcal{K}}
+    \begin{bmatrix}\delta x \\ \delta \lambda \end{bmatrix}
+    = -
+    \begin{bmatrix} \nabla f + J^\top \\ c \end{bmatrix}
+   $$
+   where $J$, $c$, $\nabla f$... are evaluated at $z=z^j$
+2. find step size $\alpha^j$, set $z^{j+1} \leftarrow z^j + \alpha \delta z$, $\lambda^{j+1} \leftarrow \lambda^j + \alpha^j \delta \lambda$.
+3. set $j\leftarrow j+1$ and go back to step 2.
+
+
+</v-clicks>
+
+<v-click>
+
+**Problem:** when $\mathcal{K}$ not invertible...
+</v-click>
+
+<!--
+"Nothing wrong" means:
+* Hessian H is nonsingular (maybe positive) on free space of J
+-->
+
+---
+
+**Idea: proximal optimization.**
+Rewrite problem as a **saddle-point**:
+$$
+  \min_{z\in \mathbb{R}^n} \max_{\lambda \in \mathbb{R}^m} f(z) + \lambda^\top c(z).
+$$
+
+Go proximal and **"concavify" in $\lambda$**:
+$$
+  \lambda_\mu^+(\lambda_e) = \arg_\lambda \min_z \max_\lambda f(z) + \lambda^\top c(z)
+  
+  \textcolor{red}{- \frac{\mu}{2} \| \lambda - \lambda_e \|_2^2}
+$$
+and **iterate the proximal mapping $\lambda_\mu^+$ : $\lambda^{k+1} = \lambda_\mu^+(\lambda^k)$**.
+
+<v-click>
+
+Equivalent to:
+
+1. Solve
+   $$
+     z^\star_\mu(\lambda_e) \in
+     \argmin_z \mathcal{L}_\mu(z, \lambda_e) := f(z) + \lambda^\top c(z) + \frac{1}{2\mu} \| c(z) \|_2^2.
+   $$
+2. Set $\lambda_e \leftarrow \lambda_e + \tfrac{1}{\mu}c(z^\star_\mu(\lambda_e))$
+3. Decrease $\mu$
+
+</v-click>
+
+---
+
+### The caveat
+
+Theory says: decrease $\mu$ to go faster.
 
 ---
 
 ## ProxDDP: an ALM algorithm for constrained trajectory optimization
+
+**Idea: do proximal ALM & dynamic programming.**
+
+
 
 
 <div class="absolute bottom-0 text-0.6em">
@@ -421,11 +584,11 @@ columns: is-8
 
 :: title ::
 
-## A software [contribution]{.text-red}
+## A software contribution
 
 :: left ::
 
-<img src="/aligator-github-page.png" class="w-140">
+<img src="/aligator-github-page.png" alt="ali-github" class="w-140">
 
 :: right ::
 
@@ -437,7 +600,7 @@ columns: is-8
 * using Pinocchio for robot modelling
 * comes with Python bindings
 * suitable for MPC!
-* under **active** development: 27kloc so far.
+* under **active** development: 27k lines of code so far.
 
 </div>
 
@@ -457,16 +620,14 @@ layout: top-title
 
 * Compare against other nonlinear solvers ALTRO (tailored for OCP) and IPOPT (generic NLP solver)
   * Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
-* Set of three benchmarks problems[^bench]
+* Set of benchmarks problems[^bench]
 
 <div v-click>
 Assess multiple configurations of the solvers:
 
-* **ALTRO**/**IPOPT**: 2 configs each
-* **ProxDDP:** test configurations with... 
-  * different initial AL penalty $\mu_0 > 0$
-  * linear vs. nonlinear rollout
-  * linesearch parameters
+* **ALTRO**: tune subproblem tolerance
+* **IPOPT**: Gauss-Newton Hessian approx. vs. LBFGS approx.
+* **ProxDDP:** test configurations with: different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
 
 </div>
 
@@ -489,15 +650,9 @@ Assess multiple configurations of the solvers:
 
 A very nonlinear task for a whole-body model, 4 contact phases.
 
-<video controls loop autoplay class="h-11/12 place-self-center">
+<video controls loop autoplay class="h-10/12 place-self-center">
   <source src="/solo12_lift_paw.mp4" type="video/mp4">
 </video>
-
----
-
-### SOLO-12 "Yoga" task: solve times vs problems solved
-
-<img src="/bench/solo_yoga_solve_times.svg" alt="solo_times" class="place-self-center" />
 
 ---
 
@@ -508,7 +663,13 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 <p class="absolute bottom-0 font-italic">
   
   **Performance profile:** no. of problems solved as function of how slower you are w.r.t. the fastest solver on a given problem.
-</p> 
+</p>
+
+---
+
+### SOLO-12 "Yoga" task: solve times vs problems solved
+
+<img src="/bench/solo_yoga_solve_times.svg" alt="solo_times" class="place-self-center" />
 
 ---
 
@@ -517,7 +678,8 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 <div class="ns-c-tight">
 
 * Underactuated system
-* Hard constraint on projectile final's position
+* Hard constraint on projectile final's position, **nothing else** (no ballistic cost...)
+* Constraints on joint torques & velocities
 
 </div>
 
@@ -544,40 +706,25 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 ProxDDP overall performs well on the benchmark suite.
 
 * Competitive with IPOPT on the test set (in solve time)
+* More robust across problems than ALTRO
+
 
 ---
-
-### Benchmarks: on standardisation
-
-Lack of a suite of standard benchmarks for robotics:
-
-* nonlinear prog. has [CUTEr](https://en.wikipedia.org/wiki/CUTEr) <sup>1</sup> (Fortran) test set, Maros-Meszaros for QPs -- efforts at standardization <sup>2</sup>
-  * solvers like IPOPT are validated on CUTEr
-* In numerical OC, **everyone reimplements and tests their own problems, with their own solver's API.**
-* Create a standard form for complex OCPs?
-  * Symbolic language like AMPL? Julia's JuMP? CasADi? 
-  * Pinocchio = right modelling tool for rigid-body quantities
-
-
-
-<div class="absolute bottom-0">
-  <p>[1] CUTEr: https://en.wikipedia.org/wiki/CUTEr</p>
-  <p>[2] qpenchmark by S. Caron: https://github.com/qpsolvers/qpbenchmark</p>
-</div>
-
-
+layout: section
 ---
 
 # Going parallel for proximal DDP
+
+---
 
 DDP-type methods (or any method) based on the **Riccati** algorithm, have a *fatal* flaw:
 
 * inherently **linear in time** $\mathcal{O}(N)$
 * no way of exploiting **multicore architectures** !
 
-
 <div class="absolute bottom-0 text-0.7em">
-  Reference papers for this section:
+  
+  **Reference papers for this section:**
 
   1. **WJ**, E. Dantec, E. Arlaud, N. Mansard, and J. Carpentier, ‘Parallel and Proximal Constrained Linear-Quadratic Methods for Real-Time Nonlinear MPC’, in _Proceedings of Robotics: Science and Systems_, Delft, Netherlands, Jul. 2024
   2. E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the _2024 IEEE-RAS International Conference on Humanoid Robots_, Nancy, France: IEEE, Jul. 2024
@@ -603,7 +750,7 @@ columns: is-4
 
 :: right ::
 
-<video controls loop autoplay class="w-full place-self-center">
+<video controls loop autoplay class="w-full place-self-center mb-2">
   <source src="/quadru_jump_edit.mp4" type="video/mp4">
 </video>
 
@@ -615,19 +762,84 @@ columns: is-4
 <img src="/trombi/ewen.jpg" alt="ewen" class="h-36"/>
 </div>
 
+<!--
+**For reference**
+
+* 20ms is often enough for walking quadrupeds
+* Ewen did biped locomotion on TALOS at ~12ms
+-->
+
 ---
-
-# Randomized smoothing
-
-....
-
+layout: section
 ---
 
 # Conclusion and perspectives
 
 ---
 
-## A roadmap
+## Take-home messages
+
+* An appropriate variant of ALM can work quite well for solving OCPs
+  * Our solver is seeing use for MPC and solving offline OCPs
+* **Implementations (and heuristics) matter**
+* Riccati can be revamped: **our parallel solver gives great improvements** on large systems!
+
+---
+
+## Perspectives / A roadmap
+
+### Short term
+
+<v-clicks>
+
+* [More comprehensive benchmarking]{.text-orange .font-bold}
+  * Compare more solvers
+  * Compare more problems
+  * Standardise benchmarks around Pinocchio and AMPL? JuMP? CasADi?
+* Need for **battle testing** on real systems
+  * How to benchmark MPC?
+
+</v-clicks>
+
+---
+
+### Long term
+
+<v-clicks>
+
+* [Automatic differentiation]{.text-orange .font-bold} for machine/deep learning applications e.g. **policy learning**
+  * AL might have the right properties for differentiable optimization
+  * Already done for QPs, including infeasible QPs by Bambade et al.[^qplayer] - maybe nonconvex OCPs work?
+  * Parallel LQ solver already introduced the right tools
+
+* [Look at nonsmooth constraints:]{.text-orange .font-bold}
+  * Time optimization
+  * Complementarity and vanishing constraints: contact & frictional contact
+
+</v-clicks>
+
+[^qplayer]:  A. Bambade, F. Schramm, A. Taylor, and J. Carpentier, ‘Leveraging augmented-Lagrangian techniques for differentiating over infeasible quadratic programs in machine learning’, presented at the The Twelfth International Conference on Learning Representations (ICLR 2024), Oct. 2023. Available: https://openreview.net/forum?id=YCPDFfmkFr
+
+<style>
+  .footnote-item {
+    font-size: 9px;
+  }
+  .footnote-item p {
+    font-size: 9px;
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+  .footnotes {
+    position: absolute;
+    bottom: 0;
+    margin-right: 4em;
+  }
+</style>
+
+<!--
+Nonsmooth constraints:
+* revamp the UR10 problem with optimizing launch time
+-->
 
 ---
 layout: cover
