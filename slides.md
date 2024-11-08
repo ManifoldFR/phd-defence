@@ -22,7 +22,6 @@ overviewSnapshots: true
 
 # First slide
 layout: cover
-color: light
 hideInToc: true
 ---
 
@@ -46,7 +45,6 @@ Wilson Jallet<br>
 
 ---
 layout: section
-color: light
 ---
 
 ### Table of contents
@@ -55,7 +53,6 @@ color: light
 
 ---
 layout: section
-color: light
 ---
 
 # Introduction
@@ -63,7 +60,6 @@ color: light
 
 ---
 layout: default
-color: light
 ---
 
 ## From industrial robots... to mobile and fully autonomous robots
@@ -525,7 +521,7 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 
 </div>
 
-<video controls loop autoplay class="h-11/12 place-self-center">
+<video controls loop autoplay class="h-10/12 place-self-center">
   <source src="/ur10_mug_throw.mp4" type="video/mp4">
 </video>
 
@@ -611,12 +607,12 @@ columns: is-4
   <source src="/quadru_jump_edit.mp4" type="video/mp4">
 </video>
 
-<div class="grid grid-cols-2 gap-6 w-fit center">
-<img src="/trombi/ewen.jpg" alt="ewen" class="h-36"/>
-<p>
+<div class="grid grid-cols-2 gap-6 w-full">
+<p class="text-right">
 
   **Ewen Dantec**
 </p>
+<img src="/trombi/ewen.jpg" alt="ewen" class="h-36"/>
 </div>
 
 ---
