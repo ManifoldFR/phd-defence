@@ -198,7 +198,7 @@ $$
 
 <v-clicks>
 
-* **Unknowns:** System states $\bm{x} = (x_0,\ldots,x_N)$ / Control inputs $\bm{u} = (u_0,...,u_{N-1})$
+* **Unknowns:** System states $\bm{x} = (x_0,\ldots,x_N)$, control inputs $\bm{u} = (u_0,...,u_{N-1})$
 * $J(\bm{x}, \bm{u})$ the **cost function**
 * $f_t = 0$: *discrete-time dynamics* $(x_t,u_t) \mapsto x_{t+1}$
 * $g_t\leqslant 0$ and $g_N\leqslant 0$: **path and terminal constraints**.  
@@ -461,22 +461,25 @@ layout: section
 
 ## Introduction to ALM
 
+### Penalty methods
+
 Consider a mathematical program:
 
 $$
 \begin{aligned}
   \min_{z\in \mathbb{R}^n}~& f(z) \\
-  \mathrm{s.t. }~& c(z) = 0
+  \mathrm{s.t. }~& g(z) = 0 \\
+                 & h(z) \leqslant 0
 \end{aligned}
 $$
 
-where $f$ is the objective and $c: \mathbb{R}^n \to \mathbb{R}^m$ the constraint.
+where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}^n \to \mathbb{R}^p$ are the constraints.
 
 <v-click>
 
 **Penalty-based methods:** do a series of unconstrained minimizations:
 
-1. Solve $\min_z f(z) + \frac{1}{\mu} c(z)$, get solution $z_\mu$
+1. Solve $\min_z f(z) + \frac{1}{\mu} (\|g(z)\|^2 + \|[h(z)]_+\|^2)$, get solution $z_\mu$
 2. Increase $\mu$
 3. Go back to 1., "warm-start" from $z_\mu$.
 
@@ -484,81 +487,65 @@ where $f$ is the objective and $c: \mathbb{R}^n \to \mathbb{R}^m$ the constraint
 
 </v-click>
 
----
-
-Another route, using **optimality conditions**: optimal $z\in\mathbb{R}^n$ must be s.t. there is $\lambda\in\mathbb{R}^m$ satisfying
-$$
-\begin{aligned}
-  \nabla f(z) + J(z)^\top \lambda = 0&, \\
-  c(z) = 0&.
-\end{aligned}
-$$
-where $J(z) = \frac{\partial c}{\partial z}$ is the **constraint Jacobian**, and apply **Newton's method**:
-
-<v-clicks>
-
-1. get directions $\delta x$ and $\delta \lambda$ by **solving the system of equations**:
-   $$
-    \underbrace{\begin{bmatrix}
-      H & J^\top \\
-      J &
-    \end{bmatrix}}_{\mathcal{K}}
-    \begin{bmatrix}\delta x \\ \delta \lambda \end{bmatrix}
-    = -
-    \begin{bmatrix} \nabla f + J^\top \\ c \end{bmatrix}
-   $$
-   where $J$, $c$, $\nabla f$... are evaluated at $z=z^j$
-2. find step size $\alpha^j$, set $z^{j+1} \leftarrow z^j + \alpha \delta z$, $\lambda^{j+1} \leftarrow \lambda^j + \alpha^j \delta \lambda$.
-3. set $j\leftarrow j+1$ and go back to step 2.
-
-
-</v-clicks>
-
-<v-click>
-
-**Problem:** when $\mathcal{K}$ not invertible...
-</v-click>
-
-<!--
-"Nothing wrong" means:
-* Hessian H is nonsingular (maybe positive) on free space of J
--->
 
 ---
 
-**Idea: proximal optimization.**
-Rewrite problem as a **saddle-point**:
+### ALM and the prox-point iteration
+
+**Instead...** Rewrite problem as a **saddle-point**:
 $$
   \min_{z\in \mathbb{R}^n} \max_{\lambda \in \mathbb{R}^m} f(z) + \lambda^\top c(z).
 $$
 
-Go proximal and **"concavify" in $\lambda$**:
-$$
-  \lambda_\mu^+(\lambda_e) = \arg_\lambda \min_z \max_\lambda f(z) + \lambda^\top c(z)
-  
-  \textcolor{red}{- \frac{\mu}{2} \| \lambda - \lambda_e \|_2^2}
-$$
-and **iterate the proximal mapping $\lambda_\mu^+$ : $\lambda^{k+1} = \lambda_\mu^+(\lambda^k)$**.
+Use the proximal-point algorithm:
 
-<v-click>
+1. **"concavify" in $\lambda$** (proximal map):
+   $$
+     \lambda_\mu^+(\textcolor{red}{\lambda_e}) = \arg_\lambda \min_z \max_\lambda f(z) + \lambda^\top c(z)
+     - \frac{\mu}{2} \| \lambda - \textcolor{red}{\lambda_e} \|_2^2
+   $$
+2. **iterate the proximal mapping $\lambda_\mu^+$ : $\boxed{\lambda^{k+1} = \lambda_\mu^+(\lambda^k)}$**
+3. (optionally) decrease $\mu$ and **repeat**.
 
-Equivalent to:
+---
 
-1. Solve
+Equivalent to the well-known AL method or *method of multipliers*:
+
+1. minimize the **AL function $\mathcal{L}_\mu$**:
    $$
      z^\star_\mu(\lambda_e) \in
      \argmin_z \mathcal{L}_\mu(z, \lambda_e) := f(z) + \lambda^\top c(z) + \frac{1}{2\mu} \| c(z) \|_2^2.
    $$
-2. Set $\lambda_e \leftarrow \lambda_e + \tfrac{1}{\mu}c(z^\star_\mu(\lambda_e))$
-3. Decrease $\mu$
-
-</v-click>
+2. set $\lambda_e \leftarrow \lambda_e + \tfrac{1}{\mu}c(z^\star_\mu(\lambda_e))$
+3. (optionally) decrease $\mu$
 
 ---
 
-### The caveat
+### ALM: computing directions
 
-Theory says: decrease $\mu$ to go faster.
+
+
+$$
+  \mathcal{L}_\mu(z, \lambda_e) := f(z) + \lambda^\top c(z) + \frac{1}{2\mu} \| c(z) \|_2^2.
+$$
+
+$$
+  \begin{bmatrix}
+    H & J^\top \\ J & -\mu I
+  \end{bmatrix}
+  \begin{bmatrix} \delta x \\ \delta \lambda \end{bmatrix}
+  =
+  -\begin{bmatrix}
+    \nabla f + J^\top \lambda \\ c + \mu (\lambda_e - \lambda)
+  \end{bmatrix}
+$$
+
+---
+
+**Caveats.**
+
+* Theory says: decrease $\mu$ to go faster.
+* Decreasing $\mu$ makes $\mathcal{K}_\mu \to \mathcal{K}_0$...
 
 ---
 
@@ -570,6 +557,8 @@ Theory says: decrease $\mu$ to go faster.
 
 
 <div class="absolute bottom-0 text-0.6em">
+
+**Reference papers**
 
 1. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘Constrained Differential Dynamic Programming: A primal-dual augmented Lagrangian approach’, in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems
 2. **WJ**, N. Mansard, and J. Carpentier, ‘Implicit Differential Dynamic Programming’, in 2022 International Conference on Robotics and Automation (ICRA), Philadelphia, United States
@@ -623,11 +612,13 @@ layout: top-title
 * Set of benchmarks problems[^bench]
 
 <div v-click>
-Assess multiple configurations of the solvers:
+
+**Methodology.** Assess multiple configurations of the solvers:
 
 * **ALTRO**: tune subproblem tolerance
 * **IPOPT**: Gauss-Newton Hessian approx. vs. LBFGS approx.
 * **ProxDDP:** test configurations with: different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
+* *more details in the revised T-RO paper.*
 
 </div>
 
@@ -643,6 +634,11 @@ Assess multiple configurations of the solvers:
     margin-right: 4em;
   }
 </style>
+
+<!--
+Only present 2 benchmark problems
+* More info in the revised submission paper (preprint online soon)
+-->
 
 ---
 
@@ -665,6 +661,10 @@ A very nonlinear task for a whole-body model, 4 contact phases.
   **Performance profile:** no. of problems solved as function of how slower you are w.r.t. the fastest solver on a given problem.
 </p>
 
+<!--
+ALTRO is not present there because... no instances converged at all.
+-->
+
 ---
 
 ### SOLO-12 "Yoga" task: solve times vs problems solved
@@ -678,8 +678,7 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 <div class="ns-c-tight">
 
 * Underactuated system
-* Hard constraint on projectile final's position, **nothing else** (no ballistic cost...)
-* Constraints on joint torques & velocities
+* Hard constraint on projectile final's position, on joint torques & velocities (no ballistic cost...),
 
 </div>
 
