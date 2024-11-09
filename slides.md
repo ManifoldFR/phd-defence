@@ -159,17 +159,15 @@ hideInToc: true
 
 :: title ::
 
-## Robot control: two ways
+## Optimal / model-predictive control
 
 :: content ::
 
 <div class="grid grid-cols-3">
   <div class="grid-col-span-1">
 
-  ## Optimal control
-
   * Model-based mapping from sensors, to **state**, to **control**
-  * For $u_t$: solve an **optimal control problem** (OCP).
+  * For $u_t$: solve an <span v-mark.circle.red>**optimal control problem**</span> (OCP).
   * Close the loop: **model-predictive control** (MPC)
 
   </div>
@@ -179,17 +177,23 @@ hideInToc: true
   </div>
 </div>
 
-
 ---
+layout: top-title
+---
+
+::title::
 
 ## What is the optimal control problem (OCP) ?
 
-It is a **mathematical optimization model** for driving a system according to a **performance objective**:
+::content::
+
+It is a **mathematical optimisation model** for driving a system according to a **performance objective**:
 $$
 \begin{aligned}
-  \underset{\bm{x}, \bm{u}}{\operatorname{\mathrm{minimize}}}~%
+  \underset{\bm{x}, \bm{u}}{\operatorname{\mathrm{minimise}}}~%
   &J(\bm{x}, \bm{u}) = \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N) \\
   \mathrm{s.t.}~%
+  &x_0 = \textcolor{Red}{x^0} \\
   &f_t(x_t, u_t, x_{t+1}) = 0 \\
   &g_t(x_t, u_t) \leqslant 0 \\
   &g_N(x_N) \leqslant 0.
@@ -212,7 +216,7 @@ layout: top-title
 
 ::title::
 
-## Why make tailored solvers?
+## OCPs are large-scale problems
 
 ::content::
 
@@ -242,13 +246,12 @@ The OCP is a **nonlinear program** with *lots* of variables but with a **specifi
 </div>
 
 ---
-hideInToc: true
 layout: top-title
 ---
 
 ::title::
 
-## Why make tailored solvers? (II)
+## Why make tailored solvers?
 
 ::content::
 
@@ -262,9 +265,9 @@ layout: top-title
 
 * Encountering large sparse matrices (like on the right)... **exploit structure** to be fast!
 * Need for **large-scale** nonlinear solvers
-* But... *generic* solver like IPOPT handles *generic* sparsity patterns
-  * use a *generic* sparse solver (MUMPS, MA57...)
-  * can't exploit the specific pattern...
+* *Generic* solvers like IPOPT handle *generic* sparsity patterns
+  * use a *generic* sparse solver (MUMPS, MA57...), can't exploit the specific pattern...
+  * pragmatic design and tuning for *generic* problems
 * A tailored solver:
   * faster by exploiting **specific structure**, become **[real-time.]{.text-red}**
 
@@ -449,11 +452,19 @@ hideInToc: true
 
 <Toc columns=1 minDepth="1" maxDepth="1" mode="all" />
 
+<!--
+We just went over the introduction...
+
+Next is part II: proximal algorithms
+-->
+
 ---
 layout: section
 ---
 
 # Proximal algorithms for Nonlinear Programming and Optimal Control
+
+<hr>
 
 <Toc columns=1 minDepth="2" maxDepth="2" mode="onlyCurrentTree" />
 
@@ -477,13 +488,13 @@ where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}
 
 <v-click>
 
-**Penalty-based methods:** do a series of unconstrained minimizations:
+**Penalty-based methods:** solve a series of unconstrained minimisations:
 
 1. Solve $\min_z f(z) + \frac{1}{\mu} (\|g(z)\|^2 + \|[h(z)]_+\|^2)$, get solution $z_\mu$
-2. Increase $\mu$
+2. Decrease $\mu$
 3. Go back to 1., "warm-start" from $z_\mu$.
 
-**Problem:** decrease $\mu$ to satisfy $c=0$, **blow up conditioning** (hard to solve step 1.)!
+**Problem:** decrease $\mu$ to satisfy $c=0 \Rightarrow$ **degrade conditioning** (harder to solve step 1.)!
 
 </v-click>
 
@@ -497,7 +508,7 @@ $$
   \min_{z\in \mathbb{R}^n} \max_{\lambda \in \mathbb{R}^m} f(z) + \lambda^\top c(z).
 $$
 
-Use the proximal-point algorithm:
+Use the proximal-point algorithm in the *dual* problem:
 
 1. **"concavify" in $\lambda$** (proximal map):
    $$
@@ -505,13 +516,13 @@ Use the proximal-point algorithm:
      - \frac{\mu}{2} \| \lambda - \textcolor{red}{\lambda_e} \|_2^2
    $$
 2. **iterate the proximal mapping $\lambda_\mu^+$ : $\boxed{\lambda^{k+1} = \lambda_\mu^+(\lambda^k)}$**
-3. (optionally) decrease $\mu$ and **repeat**.
+3. (optionally) decrease $\mu$ and **repeat** from Step 1.
 
 ---
 
 Equivalent to the well-known AL method or *method of multipliers*:
 
-1. minimize the **AL function $\mathcal{L}_\mu$**:
+1. minimise the **AL function $\mathcal{L}_\mu$**:
    $$
      z^\star_\mu(\lambda_e) \in
      \argmin_z \mathcal{L}_\mu(z, \lambda_e) := f(z) + \lambda^\top c(z) + \frac{1}{2\mu} \| c(z) \|_2^2.
@@ -549,11 +560,11 @@ $$
 
 ---
 
-## ProxDDP: an ALM algorithm for constrained trajectory optimization
+## ProxDDP: an ALM algorithm for constrained trajectory optimisation
 
 **Idea: do proximal ALM & dynamic programming.**
 
-
+** TODO FINISH **
 
 
 <div class="absolute bottom-0 text-0.6em">
@@ -607,8 +618,8 @@ layout: top-title
 
 *New in revision of T-RO submission.*
 
-* Compare against other nonlinear solvers ALTRO (tailored for OCP) and IPOPT (generic NLP solver)
-  * Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
+* Compare against other nonlinear solvers: OCP solver ALTRO, and generic solver IPOPT
+* Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
 * Set of benchmarks problems[^bench]
 
 <div v-click>
@@ -707,6 +718,8 @@ ProxDDP overall performs well on the benchmark suite.
 * Competitive with IPOPT on the test set (in solve time)
 * More robust across problems than ALTRO
 
+Benchmarks (including wrappers for ALTRO & IPOPT) available online:  
+https://github.com/Simple-Robotics/aligator-bench
 
 ---
 layout: section
@@ -714,12 +727,30 @@ layout: section
 
 # Going parallel for proximal DDP
 
+<hr>
+
+<Toc columns=1 minDepth="2" maxDepth="2" mode="onlyCurrentTree" />
+
 ---
 
-DDP-type methods (or any method) based on the **Riccati** algorithm, have a *fatal* flaw:
+## The limitations of Riccati: multicore architectures
+
+DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
 
 * inherently **linear in time** $\mathcal{O}(N)$
-* no way of exploiting **multicore architectures** !
+* no way of exploiting **multicore architectures**! (except evaluating e.g. gradients in parallel)
+
+<v-click>
+<span class="text-blue-700">
+
+**Questions**
+
+* How to parallelise the Riccati recursion?
+* What kind of speedup can we expect?
+* What are the tradeoffs?
+
+</span>
+</v-click>
 
 <div class="absolute bottom-0 text-0.7em">
   
@@ -729,6 +760,20 @@ DDP-type methods (or any method) based on the **Riccati** algorithm, have a *fat
   2. E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the _2024 IEEE-RAS International Conference on Humanoid Robots_, Nancy, France: IEEE, Jul. 2024
 </div>
 
+---
+
+## Our approach
+
+* Focus on the structure-exploiting **linear solver**, not the nonlinear problem
+* **"Parametrise to parallelise"**
+
+
+
+
+---
+
+## Benchmarks
+
 
 ---
 layout: two-cols-title
@@ -736,7 +781,7 @@ columns: is-4
 ---
 
 :: title ::
-### Deploying multi-phase constrained MPC
+## Deploying multi-phase constrained MPC
 
 :: left ::
 
@@ -744,7 +789,7 @@ columns: is-4
 
 * Fixed flight/contact phases
 * Constraints: joint position & torque limits, landing $z(t_\text{contact}) = 0$...
-* Receding-horizon control, **whole problem rotates, including the constraints**
+* Receding-horizon control, **whole problem rotates (including constraints)**
 * Real-time on modern CPU, using the **parallel Riccati recursion (~5ms per iteration)**
 
 :: right ::
@@ -766,6 +811,7 @@ columns: is-4
 
 * 20ms is often enough for walking quadrupeds
 * Ewen did biped locomotion on TALOS at ~12ms
+* Part of the trick is to *not* reallocate the entire solver data but cycle it
 -->
 
 ---
@@ -807,12 +853,12 @@ layout: section
 <v-clicks>
 
 * [Automatic differentiation]{.text-orange .font-bold} for machine/deep learning applications e.g. **policy learning**
-  * AL might have the right properties for differentiable optimization
+  * AL might have the right properties for differentiable optimisation
   * Already done for QPs, including infeasible QPs by Bambade et al.[^qplayer] - maybe nonconvex OCPs work?
   * Parallel LQ solver already introduced the right tools
 
 * [Look at nonsmooth constraints:]{.text-orange .font-bold}
-  * Time optimization
+  * Time optimisation
   * Complementarity and vanishing constraints: contact & frictional contact
 
 </v-clicks>
