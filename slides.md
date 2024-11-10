@@ -733,6 +733,21 @@ layout: section
 
 ---
 
+## Recap
+
+**So far:**
+
+<v-clicks>
+
+* established a DDP recursion-like algo for solving constrained OCPs
+* have to **solve a larger linear system**
+* provided an open-source **fast C++ implementations**
+* validated on a test bench against other solvers
+
+</v-clicks>
+
+---
+
 ## The limitations of Riccati: multicore architectures
 
 DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
@@ -741,7 +756,7 @@ DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
 * no way of exploiting **multicore architectures**! (except evaluating e.g. gradients in parallel)
 
 <v-click>
-<span class="text-blue-700">
+<span class="text-blue-700 ns-c-tight">
 
 **Questions**
 
@@ -749,6 +764,9 @@ DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
 * What kind of speedup can we expect?
 * What are the tradeoffs?
 
+<figure class="ml-20">
+  <img src="/riccati-serial.drawio.svg" alt="serial_riccati" class="w-full"/>
+</figure>
 </span>
 </v-click>
 
@@ -756,8 +774,9 @@ DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
   
   **Reference papers for this section:**
 
-  1. **WJ**, E. Dantec, E. Arlaud, N. Mansard, and J. Carpentier, ‘Parallel and Proximal Constrained Linear-Quadratic Methods for Real-Time Nonlinear MPC’, in _Proceedings of Robotics: Science and Systems_, Delft, Netherlands, Jul. 2024
-  2. E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the _2024 IEEE-RAS International Conference on Humanoid Robots_, Nancy, France: IEEE, Jul. 2024
+  1. **WJ**, E. Dantec, E. Arlaud, N. Mansard, and J. Carpentier, ‘Parallel and Proximal Constrained Linear-Quadratic Methods for Real-Time Nonlinear MPC’, in *Proceedings of Robotics: Science and Systems*, Delft, Netherlands, Jul. 2024
+  2. E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the *2024 IEEE-RAS International Conference on Humanoid Robots*, Nancy, France: IEEE, Jul. 2024
+
 </div>
 
 ---
@@ -765,15 +784,112 @@ DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
 ## Our approach
 
 * Focus on the structure-exploiting **linear solver**, not the nonlinear problem
-* **"Parametrise to parallelise"**
+* The main idea: **"Parametrise to parallelise"**
+
+---
+
+### Parametrise
+
+Consider linear-quadratic problem
+$$
+\begin{aligned}
+  \mathcal{E}_0(x_0, \theta) =
+  \min_{\bm{x},\bm{u}}~&
+  \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N; \theta)  \\
+  \mathrm{s.t.}~& A_tx_t + B_tu_t + E_tx_{t+1} + f_t = 0 \\
+                & C_tx_t + D_tu_t + d_t = 0
+\end{aligned}
+$$
+where the $\ell_t$ are all quadratic, and **the terminal cost $\ell_N$ is parametric**:
+$$
+  \ell_N(x, \theta) = \frac{1}{2}
+  \begin{bmatrix}x \\ \theta \end{bmatrix}^\top
+  \begin{bmatrix}
+    Q_N & \Phi_N \\
+    \Phi_N^\top & \Gamma_N
+  \end{bmatrix}
+  \begin{bmatrix}x \\ \theta \end{bmatrix}
+  + q_N^\top x + \gamma_N^\top \theta.
+$$
+
+<figure class="w-full ml-10">
+  <img src="/riccati-parametric.drawio.svg" alt="parametric_riccati" />
+</figure>
+
+**Property.** $\mathcal{E}_0$ is quadratic in $(x_0, \theta)$.
+
+---
+
+### Parallelise
+
+**Idea: make the co-state $\lambda$ at each "cut" point into parameters.**
+
+<figure class="w-full ml-10">
+  <img src="/riccati-parallel.drawio.svg" alt="parallel_riccati" />
+</figure>
+
+---
+
+**The general case:**
+<figure class="w-190 ml-30">
+  <img src="/riccati-parallel-gen.drawio.svg" alt="parallel_riccati" />
+</figure>
+
+<div v-click class="grid grid-cols-2">
+<div>
+
+**The consensus problem:** block-sparse problem with *block-tridiagonal pattern:*
+$$
+\begin{bmatrix}
+  \circ & \maltese \\
+  \maltese & \blacksquare & \blacktriangle & \\
+          & \blacktriangle & \circ & \maltese \\
+          &          & \maltese & \blacksquare & \ddots \\
+          &          &          & \ddots & \ddots & \maltese \\
+          &&& & \maltese & \blacksquare
+\end{bmatrix}
+\begin{bmatrix}
+  \lambda_0 \\ x_0 \\ \lambda_{i_1} \\ x_{i_1} \\ \vdots \\ x_{i_J}
+\end{bmatrix} = -\begin{bmatrix}
+  x^0 \\ p_0 \\ \sigma_0 \\ p_{i_1} \\ \vdots \\ p_{i_J}
+\end{bmatrix}
+$$
+</div>
+
+<div class="mt-10">
+
+  * Warrants **specific solver routine.**
+  * We use the **block-tridiagonal algorithm** (classic in the literature).
+
+</div>
+
+</div>
 
 
-
+<!--  
+* Essentially a block LDU factorization, very similar to Riccati itself.
+-->
 
 ---
 
 ## Benchmarks
 
+<div class="grid grid-cols-2">
+
+<figure class="grid-col-span-1">
+  <img src="/mac-gar-bench-timings.svg" alt="parallel_riccati"
+  class="h-120" />
+</figure>
+
+<div class="grid-col-span-1 mt-10">
+
+  **Synthetic benchmark.** Timings on an M1 Mac Studio Ultra desktop computer.
+  
+  * **Problem dimensions:** $n_x=36$, $n_u=12$ (same as SOLO-12 wole-body).
+  * Time horizon varies
+
+</div>
+</div>
 
 ---
 layout: two-cols-title
