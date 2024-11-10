@@ -205,8 +205,7 @@ $$
 * **Unknowns:** System states $\bm{x} = (x_0,\ldots,x_N)$, control inputs $\bm{u} = (u_0,...,u_{N-1})$
 * $J(\bm{x}, \bm{u})$ the **cost function**
 * $f_t = 0$: *discrete-time dynamics* $(x_t,u_t) \mapsto x_{t+1}$
-* $g_t\leqslant 0$ and $g_N\leqslant 0$: **path and terminal constraints**.  
-  No $g_t, g_N \Rightarrow$ OCP is "**unconstrained**".
+* $g_t\leqslant 0$ and $g_N\leqslant 0$: **path and terminal constraints**. No $g_t, g_N \Rightarrow$ OCP is "**unconstrained**".
 
 </v-clicks>
 
@@ -264,8 +263,7 @@ layout: top-title
 <v-clicks>
 
 * Encountering large sparse matrices (like on the right)... **exploit structure** to be fast!
-* Need for **large-scale** nonlinear solvers
-* *Generic* solvers like IPOPT handle *generic* sparsity patterns
+* *Generic* large-scale solvers like IPOPT handle *generic* sparsity patterns
   * use a *generic* sparse solver (MUMPS, MA57...), can't exploit the specific pattern...
   * pragmatic design and tuning for *generic* problems
 * A tailored solver:
@@ -470,7 +468,7 @@ layout: section
 
 ---
 
-## Introduction to ALM
+## Nonlinear programming with the augmented Lagrangian method
 
 ### Penalty methods
 
@@ -505,67 +503,204 @@ where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}
 
 **Instead...** Rewrite problem as a **saddle-point**:
 $$
-  \min_{z\in \mathbb{R}^n} \max_{\lambda \in \mathbb{R}^m} f(z) + \lambda^\top c(z).
+  \min_{z\in \mathbb{R}^n} \max_{\lambda \in \mathbb{R}^m, \nu \geq 0} f(z) + \lambda^\top g(z) + \nu^\top h(z).
 $$
 
-Use the proximal-point algorithm in the *dual* problem:
+Use the **proximal-point algorithm** in the *dual* problem:
 
-1. **"concavify" in $\lambda$** (proximal map):
+<v-click>
+
+1. **"concavify" in $(\lambda, \nu)$** (proximal mapping):
    $$
-     \lambda_\mu^+(\textcolor{red}{\lambda_e}) = \arg_\lambda \min_z \max_\lambda f(z) + \lambda^\top c(z)
-     - \frac{\mu}{2} \| \lambda - \textcolor{red}{\lambda_e} \|_2^2
+     \Pi_\mu^+(\textcolor{red}{\lambda_e, \nu_e}) = \arg_\lambda \min_z \max_{\lambda,\nu\geq 0} f(z) + \lambda^\top g(z) + \nu^\top h(z)
+     - \frac{\mu}{2} \| (\lambda,\nu) - (\textcolor{red}{\lambda_e,\nu_e}) \|_2^2
    $$
-2. **iterate the proximal mapping $\lambda_\mu^+$ : $\boxed{\lambda^{k+1} = \lambda_\mu^+(\lambda^k)}$**
-3. (optionally) decrease $\mu$ and **repeat** from Step 1.
+2. **iterate the proximal mapping: $(\lambda^{k+1}, \nu^{k+1}) = \Pi_\mu^+(\lambda^k, \nu^k)$**
+3. (optionally) decrease $\mu$
+4. **repeat** from Step 1.
+
+</v-click>
 
 ---
 
-Equivalent to the well-known AL method or *method of multipliers*:
+**Equivalent to the well-known augmented Lagrangian method (ALM):**:
 
-1. minimise the **AL function $\mathcal{L}_\mu$**:
+1. minimise the **augmented Lagrangian function $\mathcal{L}_\mu$**:
    $$
-     z^\star_\mu(\lambda_e) \in
-     \argmin_z \mathcal{L}_\mu(z, \lambda_e) := f(z) + \lambda^\top c(z) + \frac{1}{2\mu} \| c(z) \|_2^2.
+   \begin{aligned}
+     \textcolor{blue}{z^{k+1}} \in
+     \argmin_z \mathcal{L}_{\mu_k}(z, \lambda^k, \nu^k) := f(z) &+ (\lambda^k)^\top g(z) + \tfrac{1}{2\mu_k} \| g(z) \|^2 \\
+     &+ \tfrac{1}{2\mu_k}\| [h(z) + \mu_k\nu^k]_+ \|^2 - \tfrac{\mu_k}{2}\| \nu^k \|^2.
+   \end{aligned}
    $$
-2. set $\lambda_e \leftarrow \lambda_e + \tfrac{1}{\mu}c(z^\star_\mu(\lambda_e))$
-3. (optionally) decrease $\mu$
+2. set $\lambda^{k+1} = \lambda^k + \tfrac{1}{\mu_k}g(\textcolor{blue}{z^{k+1}} )$, $\nu^{k+1} = [\nu^k + \tfrac{1}{\mu_k}h(\textcolor{blue}{z^{k+1}} )]_+$.
+3. (optionally) decrease $\mu_k$
+4. $k \leftarrow k+1$ and go back to Step 1.
+
+<div v-click class="text-red-600">
+
+**Question** how to minimise $\mathcal{L}_\mu$?
+
+</div>
 
 ---
 
 ### ALM: computing directions
 
+$\mathcal{L}_\mu$ is only *continuously differentiable* but not *twice*-differentiable.
+
+No Newton method but [SEMI-SMOOTH NEWTON]{.text-orange .font-bold}, using a "**generalized Hessian**".
+
+<v-click>
+
+**Generalized Hessian:** given $P$ = projection matrix on active constraints, we can compute
+$$
+\begin{equation*}
+  H_{\mu_k} = H + \textcolor{red}{\frac{1}{\mu_k}} (A^\top A + B^\top P B)
+  \in \partial^2_z \mathcal{L}_{\mu_k},
+  H = \nabla_z^2 \mathcal{L}_0.
+\end{equation*}
+$$
+where $A = {\partial g}/{\partial z}$, $B = {\partial h}/{\partial z}$.
+
+Get direction $\delta z$ from
+$$
+\begin{equation}
+  \boxed{
+  H_{\mu_k}\delta z = -\nabla_z\mathcal{L}_{\mu_k}(z, \lambda^k, \nu^k).
+  }
+\end{equation}
+$$
+
+</v-click>
+
+<v-click>
+
+So, why **not** do this?
+
+* **What happens as $\mu_k \to 0$?** <span v-click=2 class="text-red-500 font-bold">(conditioning issues)</span>
+* Do we **need** to send $\mu_k \to 0$? <span v-click=  2 class="text-green font-bold">No!</span>
+* **Algorithm can be tweaked.**
+
+</v-click>
+
+<!--
+* Keep in mind the red inverse mu term
+* This term creates problems because H_mu's conditioning gets worse as mu -> 0
+
+THERE ARE THINGS WE CAN TWEAK WITH NOMINAL ALGO.
+ -->
 
 
-$$
-  \mathcal{L}_\mu(z, \lambda_e) := f(z) + \lambda^\top c(z) + \frac{1}{2\mu} \| c(z) \|_2^2.
-$$
+---
+
+#### First tweak: Primal-dual system
+
+**Rearrange the terms in Newton equation.**
+Given any $(\lambda, \nu)$, we can rewrite $(1)$ as
 
 $$
+  \underbrace{%
   \begin{bmatrix}
-    H & J^\top \\ J & -\mu I
+    H & A^\top & B^\top \\
+    A & -\mu_k I & \\
+    PB &  & -\mu_k I
   \end{bmatrix}
-  \begin{bmatrix} \delta x \\ \delta \lambda \end{bmatrix}
-  =
+  }_{=\mathcal{K}_k}
+  \begin{bmatrix}
+    \delta x\\ \delta\lambda \\ \delta \nu
+  \end{bmatrix} =
   -\begin{bmatrix}
-    \nabla f + J^\top \lambda \\ c + \mu (\lambda_e - \lambda)
+    \nabla f + A^\top \lambda + B^\top \nu \\
+    g + \mu_k(\lambda^k - \lambda) \\
+    [h + \mu_k\nu^k]_+ - \mu_k\nu
   \end{bmatrix}
 $$
 
----
-
-**Caveats.**
-
-* Theory says: decrease $\mu$ to go faster.
-* Decreasing $\mu$ makes $\mathcal{K}_\mu \to \mathcal{K}_0$...
+* possible to **symmetrize the system** ($P$ is a projection matrix)
+* apply some **stable factorization routine** (e.g. indefinite Cholesky)
+* **numerically stable** as we decrease $\mu$
 
 ---
 
-## ProxDDP: an ALM algorithm for constrained trajectory optimisation
+#### Second tweak: keep $\mu$ away from 0, reject multipliers
 
-**Idea: do proximal ALM & dynamic programming.**
+**Idea from 1991 paper by Conn, Gould & Toint**[^1]
 
-** TODO FINISH **
+<div class="grid grid-cols-2">
+<div>
 
+* Only accept $(\lambda^{k+1}, \nu^{k+1})$ when ALM iteration progressed on constraints
+* Otherwise, decrease $\mu$ (**increase penalty**)
+
+<hr>
+
+<v-click>
+
+**Original paper** just for *equality* constraints:
+
+* [Contribution:]{.font-bold .text-red} **we generalize** to inequalities (in papers)
+* same method behind **ProxQP** (from coauthor A. Bambade)
+
+</v-click>
+</div>
+
+<figure>
+<img src="/papers/conn-gould-toint-1991.png" alt="conn1991" class="w-full">
+</figure>
+</div>
+
+[^1]: A. Conn, N. I. M. Gould, and P. Toint, ‘A Globally Convergent Augmented Lagrangian Algorithm for Optimization with General Constraints and Simple Bounds’, SIAM Journal on Numerical Analysis, vol. 28, Apr. 1991.
+
+<style>
+  .footnote-item {
+    font-size: 12px;
+  }
+  .footnotes {
+    position: absolute;
+    bottom: 0;
+    margin-right: 4em;
+  }
+</style>
+
+---
+layout: top-title-two-cols
+columns: is-5
+---
+
+::title::
+
+## Software contribution 1: implementation in a new NLP library
+
+::left::
+
+* a generic nonlinear solver **ProxNLP**
+* open-source C++ library `proxsuite-nlp`
+* under **active** development
+* only **dense problems** (for now)
+* [support for Lie groups for robotics (not in papers)]{.text-pink-600 .italic}
+* support for equality, inequality, [box & other constraints (not in papers)]{.text-pink-600 .italic}
+
+On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
+
+::right::
+
+<img src="/proxsuite-logo.png" alt="proxsuite-logo" class="w-70 place-self-center mb-2">
+<img src="/proxnlp-github-page.png" alt="proxnlp-github" class="w-140">
+
+---
+
+## ProxDDP: an ALM algorithm for solving constrained OCPs
+
+### Recap
+
+* designed an ALM algorithm for nonlinear prog:
+  * generic
+  * simple
+  * handles equalities & inequalities
+  * robust to conditioning issues
+
+**Goal: adapt to structure of OCPs.**
 
 <div class="absolute bottom-0 text-0.6em">
 
@@ -578,13 +713,30 @@ $$
 </div>
 
 ---
-layout: two-cols-title
-columns: is-8
+
+### Dynamic programming
+
+**Terminal stage:**
+$$
+  V_N(x) = \max_{\nu \geq 0}
+  \ell_N(x) + \nu^\top g_N(x).
+$$
+
+**Backwards recursion:**
+$$
+  V_t(x) = \min_{u,y}\max_{\nu \geq 0}
+  \ell_t(x, u) + \nu^\top g_t(x, u) + V_{t+1}(y).
+$$
+
+
+---
+layout: top-title-two-cols
+columns: is-7
 ---
 
 :: title ::
 
-## A software contribution
+## Software contribution 2: aligator, a nonlinear OC library
 
 :: left ::
 
@@ -592,17 +744,13 @@ columns: is-8
 
 :: right ::
 
-**[aligator]{.font-mono} is a C++ OCP solver library for robotics and beyond.**
+`aligator` is a C++ OCP library for solving OCPs in robotics and beyond.
 
-<div class="ns-c-tight">
-
-* implements our ProxDDP algorithm (and reimplements FDDP as a baseline)
-* using Pinocchio for robot modelling
-* comes with Python bindings
-* suitable for MPC!
+* implements **ProxDDP** algorithm (reimplements FDDP as baseline)
+* using **Pinocchio for robot modelling**
+* comes with [Python]{.font-bold .text-blue} bindings
+* <span v-mark.underline="0">suitable for MPC!</span>
 * under **active** development: 27k lines of code so far.
-
-</div>
 
 Open-source on GitHub! https://github.com/Simple-Robotics/aligator
 
@@ -620,7 +768,7 @@ layout: top-title
 
 * Compare against other nonlinear solvers: OCP solver ALTRO, and generic solver IPOPT
 * Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
-* Set of benchmarks problems[^bench]
+* Set of benchmark problems
 
 <div v-click>
 
@@ -632,19 +780,6 @@ layout: top-title
 * *more details in the revised T-RO paper.*
 
 </div>
-
-[^bench]: GitHub: https://github.com/Simple-Robotics/aligator-bench
-
-<style>
-  .footnote-item {
-    font-size: 11px;
-  }
-  .footnotes {
-    position: absolute;
-    bottom: 0;
-    margin-right: 4em;
-  }
-</style>
 
 <!--
 Only present 2 benchmark problems
@@ -667,10 +802,10 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 
 <img src="/bench/solo_yoga_perfprofile_time.svg" alt="solo_times" class="place-self-center" />
 
-<p class="absolute bottom-0 font-italic">
+<div class="absolute bottom-0">
   
-  **Performance profile:** no. of problems solved as function of how slower you are w.r.t. the fastest solver on a given problem.
-</p>
+  [Performance ratio:]{.italic} how slower you are wrt fastest solver (in wall time) on a given problem.
+</div>
 
 <!--
 ALTRO is not present there because... no instances converged at all.
@@ -699,15 +834,15 @@ ALTRO is not present there because... no instances converged at all.
 
 ---
 
-### UR10 "ballistic" task: solve times vs problems solved
-
-<img src="/bench/ur10_ballistic_solve_times.svg" alt="ur10_ballistic" class="place-self-center">
-
----
-
 ### UR10 "ballistic" task: performance profile
 
 <img src="/bench/ur10_ballistic_perfprofile_time.svg" alt="ur10_ballistic" class="place-self-center">
+
+---
+
+### UR10 "ballistic" task: solve times vs problems solved
+
+<img src="/bench/ur10_ballistic_solve_times.svg" alt="ur10_ballistic" class="place-self-center">
 
 ---
 
@@ -718,14 +853,18 @@ ProxDDP overall performs well on the benchmark suite.
 * Competitive with IPOPT on the test set (in solve time)
 * More robust across problems than ALTRO
 
-Benchmarks (including wrappers for ALTRO & IPOPT) available online:  
+Benchmarks (including wrappers for ALTRO & IPOPT) available online:
+
+<p class="text-center">
+
 https://github.com/Simple-Robotics/aligator-bench
+</p>
 
 ---
 layout: section
 ---
 
-# Going parallel for proximal DDP
+# Going parallel for constrained OCPs
 
 <hr>
 
@@ -737,23 +876,23 @@ layout: section
 
 **So far:**
 
-<v-clicks>
-
-* established a DDP recursion-like algo for solving constrained OCPs
-* have to **solve a larger linear system**
-* provided an open-source **fast C++ implementations**
-* validated on a test bench against other solvers
-
-</v-clicks>
+* established DDP recursion-like algo for solving constrained OCPs
+* have to **solve larger linear systems at each stage**
+* provided open-source **fast C++ implementations**
+* validated on test bench against other solvers
 
 ---
 
-## The limitations of Riccati: multicore architectures
+## A limitation of Riccati: multicore architectures
 
-DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
+DDP-type methods (or any method based on **Riccati**), have a *major* limitation:
 
 * inherently **linear in time** $\mathcal{O}(N)$
 * no way of exploiting **multicore architectures**! (except evaluating e.g. gradients in parallel)
+
+<figure class="ml-10">
+  <img src="/riccati-serial.drawio.svg" alt="serial_riccati" class="w-full"/>
+</figure>
 
 <v-click>
 <span class="text-blue-700 ns-c-tight">
@@ -764,9 +903,6 @@ DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
 * What kind of speedup can we expect?
 * What are the tradeoffs?
 
-<figure class="ml-20">
-  <img src="/riccati-serial.drawio.svg" alt="serial_riccati" class="w-full"/>
-</figure>
 </span>
 </v-click>
 
@@ -784,7 +920,9 @@ DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
 ## Our approach
 
 * Focus on the structure-exploiting **linear solver**, not the nonlinear problem
-* The main idea: **"Parametrise to parallelise"**
+* Our aim: **exact** method to solve the linear problem/Newton step.
+  * iterative approaches (e.g. conjugate gradient) $\Rightarrow$ appropriate for e.g. GPUs
+* The main idea is **"Parametrise to parallelise"**
 
 ---
 
@@ -793,23 +931,23 @@ DDP-type methods (or any method based on **Riccati**), have a *fatal* flaw:
 Consider linear-quadratic problem
 $$
 \begin{aligned}
-  \mathcal{E}_0(x_0, \theta) =
+  \mathcal{E}_0(x_0, \textcolor{red}{\theta}) =
   \min_{\bm{x},\bm{u}}~&
-  \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N; \theta)  \\
+  \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N; \textcolor{red}{\theta})  \\
   \mathrm{s.t.}~& A_tx_t + B_tu_t + E_tx_{t+1} + f_t = 0 \\
                 & C_tx_t + D_tu_t + d_t = 0
 \end{aligned}
 $$
 where the $\ell_t$ are all quadratic, and **the terminal cost $\ell_N$ is parametric**:
 $$
-  \ell_N(x, \theta) = \frac{1}{2}
-  \begin{bmatrix}x \\ \theta \end{bmatrix}^\top
+  \ell_N(x, \textcolor{red}{\theta}) = \frac{1}{2}
+  \begin{bmatrix}x \\ \textcolor{red}{\theta} \end{bmatrix}^\top
   \begin{bmatrix}
     Q_N & \Phi_N \\
     \Phi_N^\top & \Gamma_N
   \end{bmatrix}
-  \begin{bmatrix}x \\ \theta \end{bmatrix}
-  + q_N^\top x + \gamma_N^\top \theta.
+  \begin{bmatrix}x \\ \textcolor{red}{\theta} \end{bmatrix}
+  + q_N^\top x + \gamma_N^\top \textcolor{red}{\theta}.
 $$
 
 <figure class="w-full ml-10">
@@ -828,9 +966,12 @@ $$
   <img src="/riccati-parallel.drawio.svg" alt="parallel_riccati" />
 </figure>
 
+**NOTE:** the parametric Riccati solve adds **overhead**.
+
 ---
 
-**The general case:**
+#### The general case
+
 <figure class="w-190 ml-30">
   <img src="/riccati-parallel-gen.drawio.svg" alt="parallel_riccati" />
 </figure>
@@ -872,24 +1013,50 @@ $$
 
 ---
 
-## Benchmarks
+#### Recovering the step
+
+* Condensed problem $\Rightarrow$ intermediate states and $(x_{i_j})_j$ and co-states $(\lambda_{i_j})_j$
+* Reinject in **parametric segments**
+  * $\Rightarrow$ recover **states, controls, path multipliers** from $t=i_j$ to $t=i_{j+1}$ **(IN PARALLEL)**
+
+<div v-click class="mt-10">
+
+**Questions:**
+
+1. Can we get a Riccati gain for $t=0$ (for MPC purposes)? <span v-click=2 class="text-green"> **YES** </span>
+2. Can we get a (parallel) **nonlinear rollout**? <span v-click=3 class="text-orange"> **NOT REALLY...** </span>
+
+</div>
+
+---
+
+## Results
+
+### Benchmarks
 
 <div class="grid grid-cols-2">
 
 <figure class="grid-col-span-1">
   <img src="/mac-gar-bench-timings.svg" alt="parallel_riccati"
-  class="h-120" />
+  class="h-110" />
 </figure>
 
 <div class="grid-col-span-1 mt-10">
 
-  **Synthetic benchmark.** Timings on an M1 Mac Studio Ultra desktop computer.
+  **Synthetic benchmark.** Timings on an M1 Mac Studio Ultra desktop (16 Perf cores, 4 Eco cores).
   
   * **Problem dimensions:** $n_x=36$, $n_u=12$ (same as SOLO-12 wole-body).
-  * Time horizon varies
+  * Speedup is **not** linear
+  * Speedup depends on **number of cores** *and* **horizon length**
 
 </div>
 </div>
+
+<!--
+* time horizon varies
+* if you add more cores, you start losing performance if your problem is too short
+* speedup isn't linear due to **overhead** in parametric Riccati solve
+ -->
 
 ---
 layout: two-cols-title
@@ -897,28 +1064,30 @@ columns: is-4
 ---
 
 :: title ::
-## Deploying multi-phase constrained MPC
+### Deploying multi-phase constrained MPC
 
 :: left ::
 
 **Whole-body jumping on Unitree GO-2:**
 
+<div>
+
 * Fixed flight/contact phases
-* Constraints: joint position & torque limits, landing $z(t_\text{contact}) = 0$...
+* Constraints: joint position, torque limits, landing $z(t_\textsf{contact}) = 0$...
 * Receding-horizon control, **whole problem rotates (including constraints)**
-* Real-time on modern CPU, using the **parallel Riccati recursion (~5ms per iteration)**
+* 1kHz loop with Riccati gain
+* Real-time on modern CPU, using the **parallel Riccati recursion (~5ms/iteration)**
+
+</div>
 
 :: right ::
 
-<video controls loop autoplay class="w-full place-self-center mb-2">
+<video controls loop autoplay class="w-screen place-self-center mb-2">
   <source src="/quadru_jump_edit.mp4" type="video/mp4">
 </video>
 
 <div class="grid grid-cols-2 gap-6 w-full">
-<p class="text-right">
-
-  **Ewen Dantec**
-</p>
+<p class="italic translate-x-50 -translate-y-20 translate rotate-270">Ewen Dantec</p>
 <img src="/trombi/ewen.jpg" alt="ewen" class="h-36"/>
 </div>
 
