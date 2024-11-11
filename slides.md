@@ -816,24 +816,23 @@ A very nonlinear task for a whole-body model, 4 contact phases.
 
 ---
 
-### SOLO-12 "Yoga" task: performance profile
+### SOLO-12 "Yoga" task: solve times vs problems solved
+
+<img src="/bench/solo_yoga_solve_times.svg" alt="solo_times" class="place-self-center" />
+
+<!--
+ALTRO is not present there because... no instances converged at all.
+-->
+
+<!-- ### SOLO-12 "Yoga" task: performance profile
 
 <img src="/bench/solo_yoga_perfprofile_time.svg" alt="solo_times" class="place-self-center" />
 
 <div class="absolute bottom-0">
   
   [Performance ratio:]{.italic} how slower you are wrt fastest solver (in wall time) on a given problem.
-</div>
+</div> -->
 
-<!--
-ALTRO is not present there because... no instances converged at all.
--->
-
----
-
-### SOLO-12 "Yoga" task: solve times vs problems solved
-
-<img src="/bench/solo_yoga_solve_times.svg" alt="solo_times" class="place-self-center" />
 
 ---
 
@@ -852,15 +851,13 @@ ALTRO is not present there because... no instances converged at all.
 
 ---
 
-### UR10 "ballistic" task: performance profile
-
-<img src="/bench/ur10_ballistic_perfprofile_time.svg" alt="ur10_ballistic" class="place-self-center">
-
----
-
 ### UR10 "ballistic" task: solve times vs problems solved
 
 <img src="/bench/ur10_ballistic_solve_times.svg" alt="ur10_ballistic" class="place-self-center">
+
+<!-- ### UR10 "ballistic" task: performance profile
+
+<img src="/bench/ur10_ballistic_perfprofile_time.svg" alt="ur10_ballistic" class="place-self-center"> -->
 
 ---
 
