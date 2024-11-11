@@ -537,9 +537,9 @@ Use the **proximal-point algorithm** in the *dual* problem:
 3. (optionally) decrease $\mu_k$
 4. $k \leftarrow k+1$ and go back to Step 1.
 
-<div v-click class="text-red-600">
+<div class="text-red-600">
 
-**Question** how to minimise $\mathcal{L}_\mu$?
+**Question** How to minimise $\mathcal{L}_\mu$?
 
 </div>
 
@@ -640,7 +640,7 @@ $$
 **Original paper** just for *equality* constraints:
 
 * [Contribution:]{.font-bold .text-red} **we generalize** to inequalities (in papers)
-* same method behind **ProxQP** (from coauthor A. Bambade)
+* same method behind **ProxQP** (from coauthors)
 
 </v-click>
 </div>
@@ -677,7 +677,6 @@ columns: is-5
 * a generic nonlinear solver **ProxNLP**
 * open-source C++ library `proxsuite-nlp`
 * under **active** development
-* only **dense problems** (for now)
 * [support for Lie groups for robotics (not in papers)]{.text-pink-600 .italic}
 * support for equality, inequality, [box & other constraints (not in papers)]{.text-pink-600 .italic}
 
@@ -965,8 +964,8 @@ $$
   + q_N^\top x + \gamma_N^\top \textcolor{red}{\theta}.
 $$
 
-<figure class="w-full ml-10">
-  <img src="/riccati-parametric.drawio.svg" alt="parametric_riccati" />
+<figure>
+  <img src="/riccati-parametric.drawio.svg" alt="parametric_riccati" class="w-full" />
 </figure>
 
 **Property.** $\mathcal{E}_0$ is quadratic in $(x_0, \theta)$.
@@ -977,8 +976,8 @@ $$
 
 **Idea: make the co-state $\lambda$ at each "cut" point into parameters.**
 
-<figure class="w-full ml-10">
-  <img src="/riccati-parallel.drawio.svg" alt="parallel_riccati" />
+<figure>
+  <img src="/riccati-parallel.drawio.svg" alt="parallel_riccati" class="w-full" />
 </figure>
 
 **NOTE:** the parametric Riccati solve adds **overhead**.
