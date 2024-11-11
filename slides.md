@@ -409,24 +409,28 @@ ALM is easy to understand and get up and running.
 </style>
 
 ---
+layout: top-title-two-cols
 hideInToc: true
+columns: is-8
 ---
+
+::title::
 
 ## Publications
 
-This thesis has led to the following publications:
+::left::
 
-<div class="!children:text-0.56em">
+<div class="!children:text-0.56em -mt-4">
 
 ### Main and related contributions
 
 1. **WJ**, N. Mansard, and J. Carpentier, ‘Implicit Differential Dynamic Programming’, in 2022 International Conference on Robotics and Automation (ICRA), Philadelphia, United States: IEEE, May 2022. doi: 10.1109/ICRA46639.2022.9811647.
-2. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘ProxNLP: a primal-dual augmented Lagrangian solver for nonlinear programming in Robotics and beyond’, in 6th Workshop on Legged Robots, Philadelphia, Pennsylvania, United States, May 2022. Accessed: Oct. 10, 2022.
-3. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘Constrained Differential Dynamic Programming: A primal-dual augmented Lagrangian approach’, in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Kyoto, Japan, Oct. 2022.
+2. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘ProxNLP: a primal-dual augmented Lagrangian solver for nonlinear programming in Robotics and beyond’, in 6th Workshop on Legged Robots, Philadelphia, Pennsylvania, United States, May 2022.
+3. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘Constrained Differential Dynamic Programming: A primal-dual augmented Lagrangian approach’, in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Kyoto, Japan.
 4. **WJ**, A. Bambade, E. Arlaud, S. El-Kazdadi, N. Mansard, and J. Carpentier, ‘PROXDDP: Proximal Constrained Trajectory Optimization’, 2023, *submitted to IEEE Transactions on Robotics (T-RO), (under revision)*
 5. **WJ**, E. Dantec, E. Arlaud, N. Mansard, and J. Carpentier, ‘Parallel and Proximal Constrained Linear-Quadratic Methods for Real-Time Nonlinear MPC’, in Proceedings of Robotics: Science and Systems (RSS), Delft, Netherlands, Jul. 2024. doi: 10.15607/RSS.2024.XX.002.
-6. <span class="text-blue">E. Ménager, A. Bilger, **WJ**, J. Carpentier, and C. Duriez, ‘Condensed semi-implicit dynamics for trajectory optimization in soft robotics’, in IEEE International Conference on Soft Robotics (RoboSoft), San Diego (CA), United States: IEEE, Apr. 2024.</span>
-7. <span class="text-blue">E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, presented at the 2024 IEEE-RAS International Conference on Humanoid Robots, Nancy, France: IEEE, Jul. 2024.</span>
+6. E. Ménager, A. Bilger, **WJ**, J. Carpentier, and C. Duriez, ‘Condensed semi-implicit dynamics for trajectory optimization in soft robotics’, in IEEE International Conference on Soft Robotics (RoboSoft), San Diego (CA), United States.
+7. E. Dantec, **WJ**, and J. Carpentier, ‘From centroidal to whole-body models for legged locomotion: a comparative analysis’, 2024 IEEE-RAS International Conference on Humanoid Robots, Nancy, France: IEEE, Jul. 2024.
 
 ### Side contributions
 
@@ -434,6 +438,20 @@ This thesis has led to the following publications:
 9. Q. Le Lidec, **WJ**, L. Montaut, I. Laptev, C. Schmid, and J. Carpentier, ‘Contact Models in Robotics: a Comparative Analysis’, IEEE Transactions on Robotics, vol. 40, pp. 3716–3733, Jul. 2024, doi: 10.1109/TRO.2024.3434208.
 
 </div>
+
+::right::
+
+<div class="flex flex-wrap">
+<div>
+  <img src="/trombi/antoine.png" alt="antoine" class="w-30"/></div>
+<div>
+  <img src="/trombi/etienne.png" alt="etienne" class="w-30"/></div>
+<div>
+  <img src="/trombi/sarah.png" alt="sarah" class="w-30"/></div>
+<div>
+  <img src="/trombi/ewen.jpg" alt="ewen"   class="w-30"/></div>
+</div>
+
 
 <style>
 h3 {
@@ -470,8 +488,6 @@ layout: section
 
 ## Nonlinear programming with the augmented Lagrangian method
 
-### Penalty methods
-
 Consider a mathematical program:
 
 $$
@@ -483,19 +499,6 @@ $$
 $$
 
 where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}^n \to \mathbb{R}^p$ are the constraints.
-
-<v-click>
-
-**Penalty-based methods:** solve a series of unconstrained minimisations:
-
-1. Solve $\min_z f(z) + \frac{1}{\mu} (\|g(z)\|^2 + \|[h(z)]_+\|^2)$, get solution $z_\mu$
-2. Decrease $\mu$
-3. Go back to 1., "warm-start" from $z_\mu$.
-
-**Problem:** decrease $\mu$ to satisfy $c=0 \Rightarrow$ **degrade conditioning** (harder to solve step 1.)!
-
-</v-click>
-
 
 ---
 
@@ -558,10 +561,11 @@ $$
 \begin{equation*}
   H_{\mu_k} = H + \textcolor{red}{\frac{1}{\mu_k}} (A^\top A + B^\top P B)
   \in \partial^2_z \mathcal{L}_{\mu_k},
-  H = \nabla_z^2 \mathcal{L}_0.
+  H = \nabla_z^2 \mathcal{L}_0,
+  A = {\partial g}/{\partial z},  
+  B = {\partial h}/{\partial z}.
 \end{equation*}
 $$
-where $A = {\partial g}/{\partial z}$, $B = {\partial h}/{\partial z}$.
 
 Get direction $\delta z$ from
 $$
@@ -576,11 +580,9 @@ $$
 
 <v-click>
 
-So, why **not** do this?
-
-* **What happens as $\mu_k \to 0$?** <span v-click=2 class="text-red-500 font-bold">(conditioning issues)</span>
-* Do we **need** to send $\mu_k \to 0$? <span v-click=  2 class="text-green font-bold">No!</span>
-* **Algorithm can be tweaked.**
+* **What happens as $\mu_k \to 0$?** <span v-click=3 class="text-red-500 font-bold">(conditioning issues)</span>
+* Do we **need** to send $\mu_k \to 0$? <span v-click=3 class="text-green font-bold">No!</span>
+* Do we **need** to converge to a minimum? <span v-click=3 class="text-green font-bold">No!</span>
 
 </v-click>
 
@@ -608,7 +610,7 @@ $$
   \end{bmatrix}
   }_{=\mathcal{K}_k}
   \begin{bmatrix}
-    \delta x\\ \delta\lambda \\ \delta \nu
+    \delta z \\ \delta\lambda \\ \delta\nu
   \end{bmatrix} =
   -\begin{bmatrix}
     \nabla f + A^\top \lambda + B^\top \nu \\
@@ -623,7 +625,7 @@ $$
 
 ---
 
-#### Second tweak: keep $\mu$ away from 0, reject multipliers
+#### Second tweak: keep $\mu$ away from 0 + inexact minimisation
 
 **Idea from 1991 paper by Conn, Gould & Toint**[^1]
 
@@ -632,6 +634,7 @@ $$
 
 * Only accept $(\lambda^{k+1}, \nu^{k+1})$ when ALM iteration progressed on constraints
 * Otherwise, decrease $\mu$ (**increase penalty**)
+* Solve ALM iteration subproblem **inexactly** within tolerance $\omega_k$
 
 <hr>
 
@@ -676,7 +679,6 @@ columns: is-5
 
 * a generic nonlinear solver **ProxNLP**
 * open-source C++ library `proxsuite-nlp`
-* under **active** development
 * [support for Lie groups for robotics (not in papers)]{.text-pink-600 .italic}
 * support for equality, inequality, [box & other constraints (not in papers)]{.text-pink-600 .italic}
 
@@ -693,17 +695,21 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 
 ### Recap
 
+<div v-click>
+
 * designed an ALM algorithm for nonlinear prog:
   * generic
   * simple
-  * handles equalities & inequalities
+  * handles equality & inequality constraints
   * robust to conditioning issues
 
 **Goal: adapt to structure of OCPs.**
 
-<div class="absolute bottom-0 text-0.7em mr-20">
+</div>
 
-**Reference papers**
+<div class="absolute bottom-0 text-0.66em mr-20">
+
+**Reference papers for this section**
 
 1. **WJ**, A. Bambade, N. Mansard, and J. Carpentier, ‘Constrained Differential Dynamic Programming: A primal-dual augmented Lagrangian approach’, in 2022 IEEE/RSJ International Conference on Intelligent Robots and Systems
 2. **WJ**, N. Mansard, and J. Carpentier, ‘Implicit Differential Dynamic Programming’, in 2022 International Conference on Robotics and Automation (ICRA), Philadelphia, United States
@@ -729,22 +735,86 @@ $$
 \end{equation*}
 $$
 
-We define a **proximal KKT operator** and recursion equation:
+We define a **proximal KKT operator** and recursion equation: **prox-point iteration for $Q_t$ implies**
 $$
-  \mathcal{T}^k_t =
+  0 =
+  \mathcal{T}^k_t(u,y,\lambda,\nu; x) :=
   \begin{bmatrix}
-    \nabla_u Q_t \\ \nabla_y Q_t \\ f_t + \mu_k(\lambda^k - \lambda) \\
+    Q_{t,u} \\ Q_{t,y} \\ f_t + \mu_k(\lambda^k - \lambda) \\
     [h_t+\mu_k\nu^k]_+ - \mu_k \nu
-  \end{bmatrix} = 0.
+  \end{bmatrix}
 $$
+
+---
+
+#### Backward pass
+
+DDP-like method: **linearize the operator $\mathcal{T}^k_t$ around nominal trajectory**: (denote $w=(u,y,\lambda,\nu)$)
+
+$$
+\begin{equation*}
+  \mathcal{T}^k_t(w+\delta w; x+\delta x) \approx \mathcal{T}^t_k(w;x) + \mathcal{K}_\mu\delta w + \partial_x \mathcal{T}^k_t \delta x
+\end{equation*}
+$$
+where
+$$
+  \mathcal{K}_\mu =
+  \underbrace{
+  \begin{bmatrix}
+    Q_{uu}& Q_{uy} & f_u^\top & h_u^\top \\
+    Q_{yu}& Q_{yy} & f_y^\top & 0 \\
+    f_u   & f_y & -\mu I & \\
+    Ph_u  & 0   &        & -\mu I
+  \end{bmatrix}
+  }_{\textsf{same as the matrix for NLPs!}},\quad \textsf{and}\quad
+  \partial_x \mathcal{T}^k_t = \begin{bmatrix}
+    Q_{ux} \\ Q_{yx} \\ f_x \\ P h_x
+  \end{bmatrix},
+  P = \textsf{(projection matrix)}
+$$
+
+<v-click>
+
+**Next steps:**
+
+* solve linearized $\mathcal{T}^k_t = 0$ **as function of $\delta x$**,
+  $$
+    \delta w = -\mathcal{K}_\mu^{-1}(\mathcal{T}^k_t + \partial_x \mathcal{T}^k_t \cdot \delta x)
+    = \textcolor{red}{\mathbf{\Gamma}}\delta x + \textcolor{red}{\bm{\gamma}} \quad \textsf{[feedback/feedforward gains]}
+  $$
+* **extract quadratic model of $V_t$**
+
+</v-click>
+
+<!-- 
+The matrix K_\mu is symmetrizable
+* you can use Cholesky on it
+* numerically stable as \mu -> 0
+-->
+
+---
+
+#### Forward pass
+
+**Option I:** [the linear rollout]{.text-orange-600 .font-bold}
+
+* $(\delta x_0, \delta\lambda_0) \leftarrow$ initial condition
+* **Iterate forward:** $[\delta u_t, \delta x_{t+1}, \delta \lambda_{t+1}, \delta\nu_t] = \mathbf{\Gamma}\delta x_t + \bm{\gamma}$ (using gains).
+* **Advantages:**
+  * **rather robust to stiff nonlinear dynamics**,
+  * close to the literature about direct methods
 
 <hr>
 
-DDP-like method:
+<v-click>
 
-* linearize
+**Option II:** [the nonlinear rollout]{.text-pink-600 .font-bold} (for *explicit* dynamics $y = f^\mathrm{ex}(x, u)$)
 
+* **same as linear**, but correct $\delta x$ using **true dynamics**
+* **Advantages:**
+  * dynamics satisfied closely after few iterates! (might be a drawback)
 
+</v-click>
 
 ---
 layout: top-title-two-cols
@@ -785,18 +855,19 @@ layout: top-title
 
 * Compare against other nonlinear solvers: OCP solver ALTRO, and generic solver IPOPT
 * Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
-* Set of benchmark problems
 
-<div v-click>
+**Methodology.**
 
-**Methodology.** Assess multiple configurations of the solvers:
+<v-clicks>
 
-* **ALTRO**: tune subproblem tolerance
-* **IPOPT**: Gauss-Newton Hessian approx. vs. LBFGS approx.
-* **ProxDDP:** test configurations with: different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
+* Solve problems within tolerance $\epsilon_\text{tol}$ for constraints & dual feasibility (except for ALTRO)
+* Assess multiple configurations of the solvers:
+  * **ALTRO:** (ALTRO:0) subproblem tol. = $10^{-4}$ / (ALTRO:1) tol. = $\epsilon_\text{tol}$
+  * **IPOPT:** (IPOPT:0) Gauss-Newton Hessian / (IPOPT:1) L-BFGS approximation
+  * **ProxDDP:** test configurations with: different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
 * *more details in the revised T-RO paper.*
 
-</div>
+</v-clicks>
 
 <!--
 Only present 2 benchmark problems
@@ -865,7 +936,7 @@ ALTRO is not present there because... no instances converged at all.
 ProxDDP overall performs well on the benchmark suite.
 
 * Competitive with IPOPT on the test set (in solve time)
-* More robust across problems than ALTRO
+* More robust across problems than ALTRO 
 
 Benchmarks (including wrappers for ALTRO & IPOPT) available online:
 
@@ -1031,7 +1102,7 @@ $$
 
 * Condensed problem $\Rightarrow$ intermediate states and $(x_{i_j})_j$ and co-states $(\lambda_{i_j})_j$
 * Reinject in **parametric segments**
-  * $\Rightarrow$ recover **states, controls, path multipliers** from $t=i_j$ to $t=i_{j+1}$ **(IN PARALLEL)**
+  * recover **states, controls, path multipliers** from $t=i_j$ to $t=i_{j+1}$ **(IN PARALLEL)**
 
 <div v-click class="mt-10">
 
