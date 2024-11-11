@@ -195,8 +195,8 @@ $$
   \mathrm{s.t.}~%
   &x_0 = \textcolor{Red}{x^0} \\
   &f_t(x_t, u_t, x_{t+1}) = 0 \\
-  &g_t(x_t, u_t) \leqslant 0 \\
-  &g_N(x_N) \leqslant 0.
+  &h_t(x_t, u_t) \leqslant 0 \\
+  &h_N(x_N) \leqslant 0.
 \end{aligned}
 $$
 
@@ -205,7 +205,7 @@ $$
 * **Unknowns:** System states $\bm{x} = (x_0,\ldots,x_N)$, control inputs $\bm{u} = (u_0,...,u_{N-1})$
 * $J(\bm{x}, \bm{u})$ the **cost function**
 * $f_t = 0$: *discrete-time dynamics* $(x_t,u_t) \mapsto x_{t+1}$
-* $g_t\leqslant 0$ and $g_N\leqslant 0$: **path and terminal constraints**. No $g_t, g_N \Rightarrow$ OCP is "**unconstrained**".
+* $h_t\leqslant 0$ and $h_N\leqslant 0$: **path and terminal constraints**. No $h_t, h_N \Rightarrow$ OCP is "**unconstrained**".
 
 </v-clicks>
 
@@ -702,7 +702,7 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 
 **Goal: adapt to structure of OCPs.**
 
-<div class="absolute bottom-0 text-0.6em">
+<div class="absolute bottom-0 text-0.7em mr-20">
 
 **Reference papers**
 
@@ -714,19 +714,37 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 
 ---
 
-### Dynamic programming
+### Dynamic programming + ALM
 
 **Terminal stage:**
 $$
-  V_N(x) = \max_{\nu \geq 0}
-  \ell_N(x) + \nu^\top g_N(x).
+  V_N(x) =
+  \ell_N(x) + \tfrac{1}{2\mu} \| [h_N(x) + \mu\nu_e]_+ \|
+  - \tfrac{\mu}{2} \|\nu_e\|^2.
 $$
 
-**Backwards recursion:**
+**Backwards recursion:** $Q$-function
 $$
-  V_t(x) = \min_{u,y}\max_{\nu \geq 0}
-  \ell_t(x, u) + \nu^\top g_t(x, u) + V_{t+1}(y).
+\begin{equation*}
+  Q_t(x,u,y,\lambda,\nu) = \ell_t(x,u) + \lambda^\top f_t(x,u,y) + \nu^\top h_t(x, u) + V_{t+1}(y)
+\end{equation*}
 $$
+
+We define a **proximal KKT operator** and recursion equation:
+$$
+  \mathcal{T}^k_t =
+  \begin{bmatrix}
+    \nabla_u Q_t \\ \nabla_y Q_t \\ f_t + \mu_k(\lambda^k - \lambda) \\
+    [h_t+\mu_k\nu^k]_+ - \mu_k \nu
+  \end{bmatrix} = 0.
+$$
+
+<hr>
+
+DDP-like method:
+
+* linearize
+
 
 
 ---
@@ -906,7 +924,7 @@ DDP-type methods (or any method based on **Riccati**), have a *major* limitation
 </span>
 </v-click>
 
-<div class="absolute bottom-0 text-0.7em">
+<div class="absolute bottom-0 text-0.7em mr-20">
   
   **Reference papers for this section:**
 
@@ -1148,14 +1166,14 @@ layout: section
 
 </v-clicks>
 
-[^qplayer]:  A. Bambade, F. Schramm, A. Taylor, and J. Carpentier, ‘Leveraging augmented-Lagrangian techniques for differentiating over infeasible quadratic programs in machine learning’, presented at the The Twelfth International Conference on Learning Representations (ICLR 2024), Oct. 2023. Available: https://openreview.net/forum?id=YCPDFfmkFr
+[^qplayer]:  A. Bambade, F. Schramm, A. Taylor, and J. Carpentier, ‘Leveraging augmented-Lagrangian techniques for differentiating over infeasible quadratic programs in machine learning’, The Twelfth International Conference on Learning Representations (ICLR 2024), Oct. 2023. Available: https://openreview.net/forum?id=YCPDFfmkFr
 
 <style>
   .footnote-item {
-    font-size: 9px;
+    font-size: 12px;
   }
   .footnote-item p {
-    font-size: 9px;
+    font-size: 12px;
     margin-top: 4px;
     margin-bottom: 0;
   }
