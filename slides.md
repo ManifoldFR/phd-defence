@@ -655,7 +655,7 @@ columns: is-5
 
 * a generic nonlinear solver **ProxNLP**
 * open-source C++ library `proxsuite-nlp`
-* [support for Lie groups for robotics (not in papers)]{.text-pink-600 .italic}
+* [support for Lie groups (not in papers)]{.text-pink-600 .italic}
 * support for equality, inequality, [box & other constraints (not in papers)]{.text-pink-600 .italic}
 
 On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
@@ -1178,7 +1178,7 @@ layout: section
 <v-clicks>
 
 * [Automatic differentiation]{.text-orange .font-bold} and machine/deep learning applications e.g. **policy learning**
-  * One contribution in this direction (with Q. Le Lidec)
+  * **One contribution in this direction** (with Q. Le Lidec)
   * AL might have the right properties for differentiable optimisation
   * Already done for QPs, including infeasible QPs by Bambade et al.[^qplayer] - maybe nonconvex OCPs work?
   * Parallel LQ solver already introduced the right tools
@@ -1190,7 +1190,7 @@ layout: section
 
 </v-clicks>
 
-[^qplayer]:  A. Bambade, F. Schramm, A. Taylor, and J. Carpentier, ‘Leveraging augmented-Lagrangian techniques for differentiating over infeasible quadratic programs in machine learning’, The Twelfth International Conference on Learning Representations (ICLR 2024), Oct. 2023. Available: https://openreview.net/forum?id=YCPDFfmkFr
+[^qplayer]:  A. Bambade, F. Schramm, A. Taylor, and J. Carpentier, ‘Leveraging augmented-Lagrangian techniques for differentiating over infeasible quadratic programs in machine learning’, The Twelfth International Conference on Learning Representations (ICLR 2024), Oct. 2023.
 
 <style>
   .footnote-item {
@@ -1284,35 +1284,69 @@ Resolvent in $\lambda$:
 $$
   (z', \lambda') =
   {\underbrace{((0, \mathrm{id}) + (1, \mu^{-1})\mathcal{T})}_{= \mu\mathcal{T}_\mu}}^{-1}
-  (z, \lambda).
+  (z_e, \lambda_e).
 $$
 
 $$
 \begin{equation*}
-  0 =
+  0 \in
   \begin{bmatrix}
     \nabla f(z') + g_z(z')^\top \lambda' \\
-    \mu(\lambda'-\lambda) -g(z') + \partial\psi^*(\lambda')
+    \mu(\lambda'-\lambda_e) - g(z') + \partial\psi^*(\lambda')
   \end{bmatrix}
 \end{equation*}
 $$
 and the second line is (single-valued when $C$ convex)
 $$
 \begin{aligned}
-  (\mathrm{id} + \mu^{-1}\partial\psi^*)(\lambda') = \lambda + \mu^{-1}g(z')
+  (\mathrm{id} + \mu^{-1}\partial\psi^*)(\lambda') \ni \lambda_e + \mu^{-1}g(z')
   &\Leftrightarrow
   \boxed{
-  \lambda' = \mathrm{prox}_{\mu^{-1} \psi^*}(\lambda + \mu^{-1}g(z')).
+  \lambda' = \mathrm{prox}_{\mu^{-1} \psi^*}(\lambda_e + \mu^{-1}g(z')).
   }
 \end{aligned}
 $$
 
 We use the prox operator's property called **Moreau's identity**:
 $$
+\begin{aligned}
   \mathrm{prox}_{\mu^{-1}h}(u) = \tfrac{1}{\mu}(\mathrm{id} - \mathrm{prox}_{\mu h})(\mu u).
+\end{aligned}
+$$
+And get
+$$
+\begin{aligned}
+  \lambda' = \tfrac{1}{\mu}(\mathrm{id}-\mathrm{proj}_C)(g(z') + \mu\lambda_e) := \textcolor{blue}{\lambda_\mu^+(z', \lambda_e)}
+\end{aligned}
 $$
 
-How to do ALM? **Ingredients:**
 
-* Clarke subderivative of $\mathrm{prox}_{\mu \psi} = \mathrm{proj}_{C}$ (**exists when $C$ convex**).
-* merit function (generalized AL function works)
+---
+
+The resolvent system becomes
+$$
+  \boxed{
+  \mathcal{T}_\mu(z', \lambda'; \lambda_e) :=
+  \begin{bmatrix}
+    \nabla f(z') + g_z^\top \lambda' \\
+    \mu(\lambda_e - \lambda^+_\mu(z', \lambda_e))
+  \end{bmatrix} = 0.
+  }
+$$
+
+How to do solve this and do ALM? **Ingredients:**
+
+* **Semi-smooth Newton**
+* Clarke subderivative $I-\Sigma$ of $\mathrm{prox}_{\mu \psi} = \mathrm{proj}_{C}$ (**exists when $C$ convex**).
+* Semi-smooth system:
+  $$ \begin{bmatrix}
+    H & g_z^\top \\
+    \Sigma g_z & -\mu \Sigma 
+  \end{bmatrix} \begin{bmatrix}
+    \delta z \\ \delta \lambda
+  \end{bmatrix} =
+    \mathcal{T}_\mu(z, \lambda; \lambda_e) $$
+* Merit function: generalised AL function works:
+  $$
+    \mathcal{L}_\mu(z, \lambda_e) = f(z) + \frac{1}{2}\mathrm{dist}_C^2(g(z) + \mu\lambda_e) - \frac{\mu}{2}\|\lambda_e\|^2.
+  $$
