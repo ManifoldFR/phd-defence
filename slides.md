@@ -653,7 +653,7 @@ columns: is-5
 
 ::left::
 
-* a generic nonlinear solver **ProxNLP**
+* a generic NLP solver **ProxNLP**
 * open-source C++ library `proxsuite-nlp`
 * [support for Lie groups (not in papers)]{.text-pink-600 .italic}
 * support for equality, inequality, [box & other constraints (not in papers)]{.text-pink-600 .italic}
@@ -697,12 +697,7 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 
 ### Dynamic programming + ALM
 
-**Terminal stage:**
-$$
-  V_N(x) =
-  \ell_N(x) + \frac{1}{2\mu} \| [h_N(x) + \mu\nu_e]_+ \|^2
-  - \frac{\mu}{2} \|\nu_e\|^2.
-$$
+**Terminal stage:** $V_N(x) = \ell_N(x) + \frac{1}{2\mu} \| [h_N(x) + \mu\nu_e]_+ \|^2 - \frac{\mu}{2} \|\nu_e\|^2.$
 
 **Backwards recursion:** $Q$-function
 $$
@@ -711,30 +706,22 @@ $$
 \end{equation*}
 $$
 
----
-
-Derivatives of the (regularized) $Q$-function:
-$$
-  \mathcal{K}_\mu =
-  \underbrace{
-  \begin{bmatrix}
-    Q_{uu}& Q_{uy} & f_u^\top & h_u^\top \\
-    Q_{yu}& Q_{yy} & f_y^\top & 0 \\
-    f_u   & f_y & -\mu I & \\
-    Ph_u  & 0   &        & -\mu I
-  \end{bmatrix}
-  }_{\textsf{same matrix as ProxNLP!}},\
-  \mathbf{m}^k = \begin{bmatrix}
-    Q_x \\ Q_y \\ f + \mu_k(\lambda^k-\lambda) \\
-    [h + \mu_k\nu^k]_+ - \mu_k\nu
-  \end{bmatrix},\
-  \textsf{and}\quad
-  \mathbf{M}^k = \begin{bmatrix}
-    Q_{ux} \\ Q_{yx} \\ f_x \\ P h_x
-  \end{bmatrix},
-$$
-
-* solve linearized **as function of $\delta x$**,
+* derivatives of the (regularized) $Q$-function (with $w=(u,y,\lambda,\nu)$):
+  $$
+    \mathcal{K}_\mu = Q_{ww} =
+    \underbrace{
+    \begin{bmatrix}
+      Q_{uu}& Q_{uy} & f_u^\top & h_u^\top \\
+      Q_{yu}& Q_{yy} & f_y^\top & 0 \\
+      f_u   & f_y & -\mu I & \\
+      Ph_u  & 0   &        & -\mu I
+    \end{bmatrix}
+    }_{\textsf{same matrix as ProxNLP!}},\
+    \mathbf{m}^k = Q_{w},\
+    \textsf{and}\quad
+    \mathbf{M}^k = Q_{wx},
+  $$
+* solve **as function of $\delta x$**,
   $$
     [\delta u, \delta y, \delta\lambda, \delta\nu] = -\mathcal{K}_\mu^{-1}(\mathbf{M}^k \delta x + \mathbf{m}^k )
     = \textcolor{red}{\mathbf{\Gamma}}\delta x + \textcolor{red}{\bm{\gamma}} \quad \textsf{[feedback/feedforward gains]}
@@ -754,9 +741,9 @@ The matrix K_\mu is symmetrizable
 **Option I:** [the linear rollout]{.text-orange-600 .font-bold}
 
 * $(\delta x_0, \delta\lambda_0) \leftarrow$ initial condition
-* **Iterate forward:** $[\delta u_t, \delta x_{t+1}, \delta \lambda_{t+1}, \delta\nu_t] = \mathbf{\Gamma}\delta x_t + \bm{\gamma}$ (using gains).
+* iterate forward: $[\delta u_t, \delta x_{t+1}, \delta \lambda_{t+1}, \delta\nu_t] = \mathbf{\Gamma}\delta x_t + \bm{\gamma}$ (using gains).
 * **Advantages:**
-  * **rather robust to stiff nonlinear dynamics**,
+  * rather robust to stiff nonlinear dynamics,
   * close to the literature about direct methods
 
 <hr>
@@ -766,8 +753,8 @@ The matrix K_\mu is symmetrizable
 **Option II:** [the nonlinear rollout]{.text-pink-600 .font-bold} (for *explicit* dynamics $y = f^\mathrm{ex}(x, u)$)
 
 * **same as linear**, but correct $\delta x$ using **true dynamics**
-* **Advantages:**
-  * dynamics satisfied closely after few iterates! (might be a drawback)
+* **Advantage:** dynamics satisfied closely after few iterates! (might be a drawback)
+* [Contribution:]{.text-pink-600 .font-bold} ALM + nonlinear rollout yields **multiple shooting**
 
 </v-click>
 
@@ -808,18 +795,18 @@ layout: top-title
 
 *New in revision of T-RO submission.*
 
-* Compare against other nonlinear solvers: OCP solver ALTRO, and generic solver IPOPT
-* Implemented wrappers around ALTRO and IPOPT to solve problems from `aligator`
+* Compare against other nonlinear solvers: OCP solver ALTRO, generic solver IPOPT
+* Implemented wrappers around ALTRO and IPOPT
 
 **Methodology.**
 
 <v-clicks>
 
-* Solve problems within tolerance $\epsilon_\text{tol}$ for constraints & dual feasibility (except for ALTRO)
-* Assess multiple configurations of the solvers:
+* Solve problems within tolerance $\epsilon_\text{tol}$ for constraints & optimality
+* Assess multiple configurations:
   * **ALTRO:** (ALTRO:0) subproblem tol. = $10^{-4}$ / (ALTRO:1) tol. = $\epsilon_\text{tol}$
   * **IPOPT:** (IPOPT:0) Gauss-Newton Hessian / (IPOPT:1) L-BFGS approximation
-  * **ProxDDP:** test configurations with: different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
+  * **ProxDDP:** different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
 * *more details in the revised T-RO paper.*
 
 </v-clicks>
@@ -963,6 +950,10 @@ DDP-type methods (or any method based on **Riccati**), have a *major* limitation
 * Our aim: **exact** method to solve the linear problem/Newton step.
   * iterative approaches (e.g. conjugate gradient) $\Rightarrow$ appropriate for e.g. GPUs
 * The main idea is **"Parametrise to parallelise"**
+* [Contributions:]{.text-orange .font-bold}
+  * algo for **exact method**
+  * deployment for MPC
+  * modern C++ implementation ready for use
 
 ---
 
@@ -1151,8 +1142,10 @@ layout: section
 
 * An appropriate variant of ALM can work quite well for solving OCPs
   * Our solver is seeing use for MPC and solving offline OCPs
+* Basic blocks for benchmarking OCP solvers
 * **Implementations (and heuristics) matter**
-* Riccati can be revamped: **our parallel solver gives great improvements** on large systems!
+* Revamped Riccati to create a **parallel Riccati-based solver for OCPs**
+  * our parallel solver gives great improvements on large systems!
 
 ---
 
@@ -1180,7 +1173,7 @@ layout: section
 * [Automatic differentiation]{.text-orange .font-bold} and machine/deep learning applications e.g. **policy learning**
   * **One contribution in this direction** (with Q. Le Lidec)
   * AL might have the right properties for differentiable optimisation
-  * Already done for QPs, including infeasible QPs by Bambade et al.[^qplayer] - maybe nonconvex OCPs work?
+  * Already done for (infeasible) QPs, see Bambade et al.[^qplayer] - maybe nonconvex OCPs?
   * Parallel LQ solver already introduced the right tools
 
 * [Look at nonsmooth constraints:]{.text-orange .font-bold}
