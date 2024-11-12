@@ -504,29 +504,7 @@ where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}
 
 ### ALM and the prox-point iteration
 
-**Instead...** Rewrite problem as a **saddle-point**:
-$$
-  \min_{z\in \mathbb{R}^n} \max_{\lambda \in \mathbb{R}^m, \nu \geq 0} f(z) + \lambda^\top g(z) + \nu^\top h(z).
-$$
-
-Use the **proximal-point algorithm** in the *dual* problem:
-
-<v-click>
-
-1. **"concavify" in $(\lambda, \nu)$** (proximal mapping):
-   $$
-     \Pi_\mu^+(\textcolor{red}{\lambda_e, \nu_e}) = \arg_\lambda \min_z \max_{\lambda,\nu\geq 0} f(z) + \lambda^\top g(z) + \nu^\top h(z)
-     - \frac{\mu}{2} \| (\lambda,\nu) - (\textcolor{red}{\lambda_e,\nu_e}) \|_2^2
-   $$
-2. **iterate the proximal mapping: $(\lambda^{k+1}, \nu^{k+1}) = \Pi_\mu^+(\lambda^k, \nu^k)$**
-3. (optionally) decrease $\mu$
-4. **repeat** from Step 1.
-
-</v-click>
-
----
-
-**Equivalent to the well-known augmented Lagrangian method (ALM):**:
+**The augmented Lagrangian method (ALM):**:
 
 1. minimise the **augmented Lagrangian function $\mathcal{L}_\mu$**:
    $$
@@ -536,7 +514,7 @@ Use the **proximal-point algorithm** in the *dual* problem:
      &+ \tfrac{1}{2\mu_k}\| [h(z) + \mu_k\nu^k]_+ \|^2 - \tfrac{\mu_k}{2}\| \nu^k \|^2.
    \end{aligned}
    $$
-2. set $\lambda^{k+1} = \lambda^k + \tfrac{1}{\mu_k}g(\textcolor{blue}{z^{k+1}} )$, $\nu^{k+1} = [\nu^k + \tfrac{1}{\mu_k}h(\textcolor{blue}{z^{k+1}} )]_+$.
+2. set $\lambda^{k+1} = \lambda^k + \tfrac{1}{\mu_k}g(\textcolor{blue}{z^{k+1}} )$, $\nu^{k+1} = [\nu^k + \tfrac{1}{\mu_k}h(\textcolor{blue}{z^{k+1}} )]_+$ **(proximal iteration)**.
 3. (optionally) decrease $\mu_k$
 4. $k \leftarrow k+1$ and go back to Step 1.
 
@@ -599,7 +577,7 @@ THERE ARE THINGS WE CAN TWEAK WITH NOMINAL ALGO.
 #### First tweak: Primal-dual system
 
 **Rearrange the terms in Newton equation.**
-Given any $(\lambda, \nu)$, we can rewrite $(1)$ as
+Given any $(\lambda, \nu)$, we can rewrite $(1)$ in primal-dual form
 
 $$
   \underbrace{%
@@ -620,7 +598,7 @@ $$
 $$
 
 * possible to **symmetrize the system** ($P$ is a projection matrix)
-* apply some **stable factorization routine** (e.g. indefinite Cholesky)
+* apply some [stable factorisation routine]{.text-green-600 .font-bold} (e.g. indefinite Cholesky)
 * **numerically stable** as we decrease $\mu$
 
 ---
@@ -735,28 +713,9 @@ $$
 \end{equation*}
 $$
 
-We define a **proximal KKT operator** and recursion equation: **prox-point iteration for $Q_t$ implies**
-$$
-  0 =
-  \mathcal{T}^k_t(u,y,\lambda,\nu; x) :=
-  \begin{bmatrix}
-    Q_{t,u} \\ Q_{t,y} \\ f_t + \mu_k(\lambda^k - \lambda) \\
-    [h_t+\mu_k\nu^k]_+ - \mu_k \nu
-  \end{bmatrix}
-$$
-
 ---
 
-#### Backward pass
-
-DDP-like method: **linearize the operator $\mathcal{T}^k_t$ around nominal trajectory**: (denote $w=(u,y,\lambda,\nu)$)
-
-$$
-\begin{equation*}
-  \mathcal{T}^k_t(w+\delta w; x+\delta x) \approx \mathcal{T}^t_k(w;x) + \mathcal{K}_\mu\delta w + \partial_x \mathcal{T}^k_t \delta x
-\end{equation*}
-$$
-where
+Derivatives of the (regularized) $Q$-function:
 $$
   \mathcal{K}_\mu =
   \underbrace{
@@ -766,25 +725,23 @@ $$
     f_u   & f_y & -\mu I & \\
     Ph_u  & 0   &        & -\mu I
   \end{bmatrix}
-  }_{\textsf{same as the matrix for NLPs!}},\quad \textsf{and}\quad
-  \partial_x \mathcal{T}^k_t = \begin{bmatrix}
+  }_{\textsf{same matrix as ProxNLP!}},\
+  \mathbf{m}^k = \begin{bmatrix}
+    Q_x \\ Q_y \\ f + \mu_k(\lambda^k-\lambda) \\
+    [h + \mu_k\nu^k]_+ - \mu_k\nu
+  \end{bmatrix},\
+  \textsf{and}\quad
+  \mathbf{M}^k = \begin{bmatrix}
     Q_{ux} \\ Q_{yx} \\ f_x \\ P h_x
   \end{bmatrix},
-  P = \textsf{(projection matrix)}
 $$
 
-<v-click>
-
-**Next steps:**
-
-* solve linearized $\mathcal{T}^k_t = 0$ **as function of $\delta x$**,
+* solve linearized **as function of $\delta x$**,
   $$
-    \delta w = -\mathcal{K}_\mu^{-1}(\mathcal{T}^k_t + \partial_x \mathcal{T}^k_t \cdot \delta x)
+    [\delta u, \delta y, \delta\lambda, \delta\nu] = -\mathcal{K}_\mu^{-1}(\mathbf{M}^k \delta x + \mathbf{m}^k )
     = \textcolor{red}{\mathbf{\Gamma}}\delta x + \textcolor{red}{\bm{\gamma}} \quad \textsf{[feedback/feedforward gains]}
   $$
 * **extract quadratic model of $V_t$**
-
-</v-click>
 
 <!-- 
 The matrix K_\mu is symmetrizable
@@ -1192,7 +1149,7 @@ layout: section
 
 ---
 
-## Take-home messages
+## Contributions
 
 * An appropriate variant of ALM can work quite well for solving OCPs
   * Our solver is seeing use for MPC and solving offline OCPs
@@ -1222,7 +1179,8 @@ layout: section
 
 <v-clicks>
 
-* [Automatic differentiation]{.text-orange .font-bold} for machine/deep learning applications e.g. **policy learning**
+* [Automatic differentiation]{.text-orange .font-bold} and machine/deep learning applications e.g. **policy learning**
+  * One contribution in this direction (with Q. Le Lidec)
   * AL might have the right properties for differentiable optimisation
   * Already done for QPs, including infeasible QPs by Bambade et al.[^qplayer] - maybe nonconvex OCPs work?
   * Parallel LQ solver already introduced the right tools
@@ -1230,6 +1188,7 @@ layout: section
 * [Look at nonsmooth constraints:]{.text-orange .font-bold}
   * Time optimisation
   * Complementarity and vanishing constraints: contact & frictional contact
+  * Look at randomised smoothing?
 
 </v-clicks>
 
@@ -1268,3 +1227,28 @@ hideInToc: true
 ---
 
 ## Backup slides
+
+
+---
+
+### ALM and the prox-point iteration
+
+**Instead...** Rewrite problem as a **saddle-point**:
+$$
+  \min_{z\in \mathbb{R}^n} \max_{\lambda \in \mathbb{R}^m, \nu \geq 0} f(z) + \lambda^\top g(z) + \nu^\top h(z).
+$$
+
+Use the **proximal-point algorithm** in the *dual* problem:
+
+<v-click>
+
+1. **"concavify" in $(\lambda, \nu)$** (proximal mapping):
+   $$
+     \Pi_\mu^+(\textcolor{red}{\lambda_e, \nu_e}) = \arg_\lambda \min_z \max_{\lambda,\nu\geq 0} f(z) + \lambda^\top g(z) + \nu^\top h(z)
+     - \frac{\mu}{2} \| (\lambda,\nu) - (\textcolor{red}{\lambda_e,\nu_e}) \|_2^2
+   $$
+2. **iterate the proximal mapping: $(\lambda^{k+1}, \nu^{k+1}) = \Pi_\mu^+(\lambda^k, \nu^k)$**
+3. (optionally) decrease $\mu$
+4. **repeat** from Step 1.
+
+</v-click>
