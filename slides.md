@@ -608,9 +608,9 @@ $$
 <div class="grid grid-cols-2">
 <div>
 
+* Solve ALM subproblem **inexactly** within tol. $\omega_k$
 * Only accept $(\lambda^{k+1}, \nu^{k+1})$ when ALM iteration progressed on constraints
 * Otherwise, decrease $\mu$ (**increase penalty**)
-* Solve ALM subproblem **inexactly** within tol. $\omega_k$
 
 <hr>
 
@@ -618,8 +618,9 @@ $$
 
 **Original paper** just for *equality* constraints:
 
+* used in generic NLP solver **LANCELOT**
 * [Contribution:]{.font-bold .text-red} **we generalize** to inequalities (in papers)
-* same method behind **ProxQP** (from coauthors)
+* same method behind **ProxQP** (from my coauthors)
 
 </v-click>
 </div>
@@ -667,8 +668,6 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 
 ---
 
-## ProxDDP: an ALM algorithm for solving constrained OCPs
-
 ### Recap
 
 <div v-click>
@@ -695,7 +694,7 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 
 ---
 
-### Dynamic programming + ALM
+## ProxDDP: an ALM algorithm for solving constrained OCPs
 
 **Terminal stage:** $V_N(x) = \ell_N(x) + \frac{1}{2\mu} \| [h_N(x) + \mu\nu_e]_+ \|^2 - \frac{\mu}{2} \|\nu_e\|^2.$
 
@@ -873,12 +872,21 @@ ALTRO is not present there because... no instances converged at all.
 
 ---
 
-### Benchmarks: takeaway message
+### ProxDDP and benchmarks: conclusion
+
+[Contributions recap:]{.text-orange .font-bold}
+
+* reformulate ALM for numerical OC with **stable** primal-dual systems
+* **generalise** the heuristic from LANCELOT (to inequalities + OCP setting)
+* benchmark against other ALM attempt (ALTRO) and well-known generic NLP solver (IPOPT)
+
+<hr>
+<v-click>
 
 ProxDDP overall performs well on the benchmark suite.
 
 * Competitive with IPOPT on the test set (in solve time)
-* More robust across problems than ALTRO 
+* More robust across problems than ALTRO
 
 Benchmarks (including wrappers for ALTRO & IPOPT) available online:
 
@@ -886,6 +894,8 @@ Benchmarks (including wrappers for ALTRO & IPOPT) available online:
 
 https://github.com/Simple-Robotics/aligator-bench
 </p>
+
+</v-click>
 
 ---
 layout: section
@@ -1313,7 +1323,6 @@ $$
 \end{aligned}
 $$
 
-
 ---
 
 The resolvent system becomes
@@ -1343,3 +1352,17 @@ How to do solve this and do ALM? **Ingredients:**
   $$
     \mathcal{L}_\mu(z, \lambda_e) = f(z) + \frac{1}{2}\mathrm{dist}_C^2(g(z) + \mu\lambda_e) - \frac{\mu}{2}\|\lambda_e\|^2.
   $$
+
+---
+
+### Extra benchmark
+
+#### UR5 "Slalom"
+
+<video controls loop autoplay class="h-10/12 place-self-center">
+  <source src="/ur_slalom.mp4" type="video/mp4">
+</video>
+
+---
+
+<img src="/bench/ur_slalom_solve_times.svg" alt="ur10_ballistic" class="place-self-center">
