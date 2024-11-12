@@ -502,9 +502,7 @@ where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}
 
 ---
 
-### ALM and the prox-point iteration
-
-**The augmented Lagrangian method (ALM):**:
+### The augmented Lagrangian method (ALM):
 
 1. minimise the **augmented Lagrangian function $\mathcal{L}_\mu$**:
    $$
@@ -514,7 +512,7 @@ where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}
      &+ \tfrac{1}{2\mu_k}\| [h(z) + \mu_k\nu^k]_+ \|^2 - \tfrac{\mu_k}{2}\| \nu^k \|^2.
    \end{aligned}
    $$
-2. set $\lambda^{k+1} = \lambda^k + \tfrac{1}{\mu_k}g(\textcolor{blue}{z^{k+1}} )$, $\nu^{k+1} = [\nu^k + \tfrac{1}{\mu_k}h(\textcolor{blue}{z^{k+1}} )]_+$ **(proximal iteration)**.
+2. set $\begin{aligned}\lambda^{k+1} &= \lambda^k + \tfrac{1}{\mu_k}g(\textcolor{blue}{z^{k+1}} ), \\ \nu^{k+1} &= [\nu^k + \tfrac{1}{\mu_k}h(\textcolor{blue}{z^{k+1}} )]_+\end{aligned}$ **(proximal iteration)**.
 3. (optionally) decrease $\mu_k$
 4. $k \leftarrow k+1$ and go back to Step 1.
 
@@ -612,7 +610,7 @@ $$
 
 * Only accept $(\lambda^{k+1}, \nu^{k+1})$ when ALM iteration progressed on constraints
 * Otherwise, decrease $\mu$ (**increase penalty**)
-* Solve ALM iteration subproblem **inexactly** within tolerance $\omega_k$
+* Solve ALM subproblem **inexactly** within tol. $\omega_k$
 
 <hr>
 
@@ -702,8 +700,8 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 **Terminal stage:**
 $$
   V_N(x) =
-  \ell_N(x) + \tfrac{1}{2\mu} \| [h_N(x) + \mu\nu_e]_+ \|
-  - \tfrac{\mu}{2} \|\nu_e\|^2.
+  \ell_N(x) + \frac{1}{2\mu} \| [h_N(x) + \mu\nu_e]_+ \|^2
+  - \frac{\mu}{2} \|\nu_e\|^2.
 $$
 
 **Backwards recursion:** $Q$-function
@@ -918,10 +916,10 @@ layout: section
 
 **So far:**
 
-* established DDP recursion-like algo for solving constrained OCPs
-* have to **solve larger linear systems at each stage**
-* provided open-source **fast C++ implementations**
-* validated on test bench against other solvers
+* Established DDP recursion-like algo for solving constrained OCPs
+* Have to **solve larger linear systems at each stage**
+* Provided open-source **fast C++ implementations**
+* Validated on test bench against other solvers
 
 ---
 
@@ -933,7 +931,7 @@ DDP-type methods (or any method based on **Riccati**), have a *major* limitation
 * no way of exploiting **multicore architectures**! (except evaluating e.g. gradients in parallel)
 
 <figure class="ml-10">
-  <img src="/riccati-serial.drawio.svg" alt="serial_riccati" class="w-full"/>
+  <img src="/riccati-serial.drawio.svg" alt="serial_riccati" class="w-190"/>
 </figure>
 
 <v-click>
@@ -1228,9 +1226,6 @@ hideInToc: true
 
 ## Backup slides
 
-
----
-
 ### ALM and the prox-point iteration
 
 **Instead...** Rewrite problem as a **saddle-point**:
@@ -1252,3 +1247,72 @@ Use the **proximal-point algorithm** in the *dual* problem:
 4. **repeat** from Step 1.
 
 </v-click>
+
+---
+
+### ALM and more generic constraints
+
+$$
+\begin{aligned}
+  \min_z~& f(z) \\
+  \mathrm{s.t.}~ &g(z) \in C
+\end{aligned}
+$$
+where $C$ is *convex* subset of $\mathbb{R}^m$.
+
+**Optimality conditions**
+$$
+\begin{aligned}
+  \nabla f(z) + g_z^\top \lambda = 0& \\
+  \lambda \in N_C(g(z))&
+\end{aligned}
+$$
+Define $\psi(u) := \imath_C(u)$, so $\partial\psi(u) = N_C(u)$.
+The second line $\Leftrightarrow 0 \in -g(z) + \partial\psi^*(\lambda)$, and the KKT conditions are equivalent to:
+$$
+  0 \in
+  \mathcal{T}(z, \lambda) =
+  \begin{bmatrix}
+    \nabla f(z) + g_z(z)^\top\lambda \\
+    -g(z) + \partial\psi^*(\lambda)
+  \end{bmatrix}
+$$
+
+---
+
+Resolvent in $\lambda$:
+$$
+  (z', \lambda') =
+  {\underbrace{((0, \mathrm{id}) + (1, \mu^{-1})\mathcal{T})}_{= \mu\mathcal{T}_\mu}}^{-1}
+  (z, \lambda).
+$$
+
+$$
+\begin{equation*}
+  0 =
+  \begin{bmatrix}
+    \nabla f(z') + g_z(z')^\top \lambda' \\
+    \mu(\lambda'-\lambda) -g(z') + \partial\psi^*(\lambda')
+  \end{bmatrix}
+\end{equation*}
+$$
+and the second line is (single-valued when $C$ convex)
+$$
+\begin{aligned}
+  (\mathrm{id} + \mu^{-1}\partial\psi^*)(\lambda') = \lambda + \mu^{-1}g(z')
+  &\Leftrightarrow
+  \boxed{
+  \lambda' = \mathrm{prox}_{\mu^{-1} \psi^*}(\lambda + \mu^{-1}g(z')).
+  }
+\end{aligned}
+$$
+
+We use the prox operator's property called **Moreau's identity**:
+$$
+  \mathrm{prox}_{\mu^{-1}h}(u) = \tfrac{1}{\mu}(\mathrm{id} - \mathrm{prox}_{\mu h})(\mu u).
+$$
+
+How to do ALM? **Ingredients:**
+
+* Clarke subderivative of $\mathrm{prox}_{\mu \psi} = \mathrm{proj}_{C}$ (**exists when $C$ convex**).
+* merit function (generalized AL function works)
