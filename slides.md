@@ -69,8 +69,8 @@ layout: default
 **Towards more autonomous robots:**
 
 * **unstructured** environments require **adaptiveness**
-* mobile robots: advances in planning and mapping (e.g. SLAM);
-* legged robots: advances in real-time **online control**
+  * planning and mapping (e.g. SLAM);
+  * real-time [online control]{.text-orange-600 .font-bold}
 * agile manufacturing: **tasks & objects change**, more complex **open** environments
 
 </div>
@@ -145,7 +145,7 @@ layout: top-title
   ## Reinforcement learning
 
   <SlidevVideo loop autoplay class="w-full">
-    <source src="/eth-anymal-parkout-clip.mp4" type="video/mp4">
+    <source src="/parkour_no_audio_480p.mp4" type="video/mp4">
   </SlidevVideo>
 
   <img src="/deeprl.drawio.svg" alt="control law" class="h-40 place-self-center"></img>
@@ -154,8 +154,12 @@ layout: top-title
 </div>
 
 <!--
+TWO PHILOSOPHIES FOR MOTION GENERATION:
+* OCP
+* RL
+
 OPTIMAL CONTROL:
-* The model is used to control the plant
+* Approach is used to control the plant
 
 REINFORCEMENT LEARNING:
 * Model is STILL used for learning thru simulator
@@ -185,7 +189,7 @@ hideInToc: true
   </div>
 
   <div class="grid-col-span-2 center">
-    <img src="/optctrl-zoom.drawio.svg" alt="control law" class="w-full place-self-center" />
+    <img src="/optctrl-zoom.drawio.svg" alt="control law" class="w-100 place-self-center" />
   </div>
 </div>
 
@@ -199,16 +203,16 @@ layout: top-title
 
 ::content::
 
-It is a **mathematical optimisation model** for driving a system according to a **performance objective**:
+A **mathematical optimisation model** to drive a system according to a **performance objective**:
 $$
 \begin{aligned}
   \underset{\bm{x}, \bm{u}}{\operatorname{\mathrm{minimise}}}~%
   &J(\bm{x}, \bm{u}) = \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N) \\
   \mathrm{s.t.}~%
-  &x_0 = \textcolor{Red}{x^0} \\
+  &x_0 = x^0 \\
   &f_t(x_t, u_t, x_{t+1}) = 0 \\
-  &h_t(x_t, u_t) \leqslant 0 \\
-  &h_N(x_N) \leqslant 0.
+  &\textcolor{red}{h_t(x_t, u_t) \leqslant 0} \\
+  &\textcolor{red}{h_N(x_N) \leqslant 0}.
 \end{aligned}
 $$
 
@@ -217,12 +221,18 @@ $$
 * **Unknowns:** System states $\bm{x} = (x_0,\ldots,x_N)$, control inputs $\bm{u} = (u_0,...,u_{N-1})$
 * $J(\bm{x}, \bm{u})$ the **cost function**
 * $f_t = 0$: *discrete-time dynamics* $(x_t,u_t) \mapsto x_{t+1}$
-* $h_t\leqslant 0$ and $h_N\leqslant 0$: **path and terminal constraints**. No $h_t, h_N \Rightarrow$ OCP is "**unconstrained**".
+* $h_t\leqslant 0$ and $h_N\leqslant 0$: **path and terminal constraints**.
 
 </v-clicks>
 
 <!--
 Dynamics written this way **includes implicit time-stepping integrators** i.e. IRK
+
+WHAT WE KNOW IN ROBOTICS:
+* solving without constraints, unconstrained OCPs
+
+WHAT I DO:
+* add constraint handling in OCPs
 -->
 
 ---
@@ -270,6 +280,10 @@ IF WE TAKE A QUADRUPED (SOLO-12) INSTEAD
 * nu=12
 * **187MB** FOR HESSIAN
 * **140MB** FOR JACOBIAN
+
+**For reference: L2 Cache size Apple M3**
+* 16MB on Pro performance cores
+* 32MB on Ultra
 -->
 
 ---
@@ -344,13 +358,11 @@ Literature for strategies on this goes back years. Main families of methods are:
 
 Our choice is ALM because:
 
-* easy to understand
-* simple to implement and pragmatic choice
-* versatile (equality constraints, inequality constraints, more...)
-* fairly straightforward to **warm-start**
+* no difficult aspects for implementation (unlike SQP)
+* fairly straightforward to **warm-start** (unlike IPM)
+* versatile (implicit dynamics, equality constraints, inequality constraints, more...)
 
 </div>
-
 <!-- [^1]: J. Nocedal and S. J. Wright, Numerical optimization, 2nd ed. in Springer series in operations research. New York: Springer, 2006. -->
 
 <!--
@@ -1148,7 +1160,7 @@ $$
 <div class="grid grid-cols-2">
 
 <figure class="grid-col-span-1">
-  <img src="/mac-gar-bench-timings.svg" alt="parallel_riccati"
+  <img src="/mac-gar-bench-timings.png" alt="parallel_riccati"
   class="h-110" />
 </figure>
 
