@@ -221,6 +221,10 @@ $$
 
 </v-clicks>
 
+<!--
+Dynamics written this way **includes implicit time-stepping integrators** i.e. IRK
+-->
+
 ---
 layout: top-title
 ---
@@ -246,15 +250,27 @@ The OCP is a **nonlinear program** with *lots* of variables but with a **specifi
   | -------------- | ---------------- |---------------- | -------------------- | ---------------- |
   |  14            |   7              |     100         | 2114                 | 1414             |
 
-  **Hessian of cost:** 2114 $\times$ 2114 = ~4.5M entries!
+  **Hessian of cost:** 2114 $\times$ 2114 = ~4.5M entries (~36MB)!  
   **Only 0.99% are nonzero.**
 
-  **Jacobian of constraints:** 2114 $\times$ 1414 = ~3.0M entries!
+  **Jacobian of constraints:** 2114 $\times$ 1414 = ~3.0M entries (~24MB)!  
   **Only 1.6% are nonzero.**
   </v-click>
   </div>
 
 </div>
+
+<!--
+Napkin math:
+* 4.5 M float64 = **36 MEGABYTES**
+* 3.0 M float64 = **24 MEGABYTES**
+
+IF WE TAKE A QUADRUPED (SOLO-12) INSTEAD
+* nx=36
+* nu=12
+* **187MB** FOR HESSIAN
+* **140MB** FOR JACOBIAN
+-->
 
 ---
 layout: top-title
