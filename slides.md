@@ -59,10 +59,10 @@ layout: default
 ## From industrial robots... to mobile and fully autonomous robots
 
 <figure class="w-full">
-  <img src="/robot-timeline.drawio.png">
+  <img src="/robot-timeline.drawio.png" alt="timeline" class="place-self-center" />
 </figure>
 
-**Classical industrial robotics**: fixed (closed) environment, everything known, **hard-coded** routines.
+**Classical industrial robotics**: known, fixed, closed environments, **hard-coded** routines.
 
 <div v-click class="ns-c-tight">
 
@@ -71,18 +71,29 @@ layout: default
 * **unstructured** environments require **adaptiveness**
 * mobile robots: advances in planning and mapping (e.g. SLAM);
 * legged robots: advances in real-time **online control**
-* agile manufacturing: tasks & objects change, more complex environments
+* agile manufacturing: **tasks & objects change**, more complex **open** environments
 
 </div>
 
 <div class="absolute bottom-0 text-0.6em">
 
-  Sources: KUKA: [Wikipedia](https://commons.wikimedia.org/wiki/File:KUKA_Industrial_Robots_IR.jpg); Dyson 360 robot: [dyson.com.au](https://edition.cnn.com/cnn-underscored/reviews/dyson-360-vis-nav-robot-vacuum)
+  Sources (left-to-right): KUKA: [Wikimedia](https://commons.wikimedia.org/wiki/File:KUKA_Industrial_Robots_IR.jpg); Dyson 360 robot: [dyson.com.au](https://edition.cnn.com/cnn-underscored/reviews/dyson-360-vis-nav-robot-vacuum); Spot picture: *me*; Atlas: [Boston Dynamics](https://www.youtube.com/watch?v=-e1_QhJ1EhQ)
 </div>
 
 :: note ::
 
 Sources: KUKA: [Wikipedia](https://commons.wikimedia.org/wiki/File:KUKA_Industrial_Robots_IR.jpg); Dyson 360 robot: [dyson.com.au](https://edition.cnn.com/cnn-underscored/reviews/dyson-360-vis-nav-robot-vacuum)
+
+<!--
+Classical industrial robots:
+* we know everything about envs
+* nothing changes, **same tasks**
+* can use **hard-coded** routines for picking, placing, etc
+
+Autonomy means:
+* variability, complex environments
+*
+-->
 
 ---
 layout: top-title
@@ -578,7 +589,7 @@ THERE ARE THINGS WE CAN TWEAK WITH NOMINAL ALGO.
 #### First tweak: Primal-dual system
 
 **Rearrange the terms in Newton equation.**
-Given any $(\lambda, \nu)$, we can rewrite $(1)$ in primal-dual form
+Given any $(\lambda, \nu)$, we can rewrite $(1)$ in primal-dual form using the block system:
 
 $$
   \underbrace{%
