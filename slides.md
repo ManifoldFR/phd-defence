@@ -306,7 +306,7 @@ layout: top-title
 * Encountering large sparse matrices (like on the right)... **exploit structure** to be fast!
 * *Generic* large-scale solvers like IPOPT handle *generic* sparsity patterns
   * use a *generic* sparse solver (MUMPS, MA57...), can't exploit the specific pattern...
-  * pragmatic design and tuning for *generic* problems
+  * designed and tuned for *generic* problems
 * A tailored solver:
   * faster by exploiting **specific structure**, become [real-time.]{.text-red-600 .font-bold}
 
@@ -345,9 +345,13 @@ The OCP is a *nonlinear problem* with *nonlinear constraints*.
 
 Literature for strategies on this goes back years. Main families of methods are:
 
-* (sequential) quadratic programming
-* interior-point methods
-* [augmented Lagrangian methods (ALM)]{.font-bold .text-orange}
+<div class="ns-c-tight">
+
+* (sequential) quadratic programming (SQP)[^4]
+* interior-point methods (IPM)[^2]
+* [augmented Lagrangian methods (ALM)]{.font-bold .text-orange}[^1][^3]
+
+</div>
 
 **All can be implemented with specific attention to OCPs.**
 
@@ -357,18 +361,11 @@ Literature for strategies on this goes back years. Main families of methods are:
 
 Our choice is ALM because:
 
-* no difficult aspects for implementation (unlike e.g. active-set QP)
+* no difficult aspects for implementation
 * fairly straightforward to **warm-start** (unlike IPM)
 * versatile (implicit dynamics, equality constraints, inequality constraints, more...)
 
 </div>
-<!-- [^1]: J. Nocedal and S. J. Wright, Numerical optimization, 2nd ed. in Springer series in operations research. New York: Springer, 2006. -->
-
-<!--
-There are a lot of methods. Best reference is Nocedal's book.
-
-ALM is easy to understand and get up and running.
--->
 
 <style>
   .footnote-item {
@@ -386,42 +383,44 @@ ALM is easy to understand and get up and running.
   }
 </style>
 
+[^1]: D. P. Bertsekas, Constrained Optimization and Lagrange Multiplier Methods. Athena Scientific, 1996.
+[^2]: S. Mehrotra, ‘On the Implementation of a Primal-Dual Interior Point Method’, SIAM J. Optim., vol. 2, no. 4, pp. 575–601, Nov. 1992, doi: 10.1137/0802028.
+[^3]: M. J. Powell, ‘A method for nonlinear constraints in minimization problems’, Optimization, pp. 283–298, 1969.
+[^4]: P. Gill, W. Murray, and M. Saunders, ‘SNOPT: An SQP Algorithm for large-scale constrained optimization’, SIAM Journal on Optimization, vol. 12, pp. 979–1006, Apr. 2002, doi: 10.2307/20453604.
+
+
 ---
 
 ## Problem statement
 
 **Questions:**
 
-* Can we use a variant of the **augmented Lagrangian method (ALM)** to design a new solver for constrained OCPs?
-* Can we **keep it simple**, and **solve multiple problems well**?
-* Can we **make it real-time** for model-predictive control (MPC) ?
+Can we design a new solver for constrained OCPs that:
+
+* is simple
+* can solve **multiple problems well**
+* can run in **real-time** for MPC?
 
 <hr/>
+<v-click>
 
 **Contributions**
 
-* A new, primal-dual ALM algorithm for solving OCP
+* A new, primal-dual ALM algorithm for solving constrained OCPs
 * A performant library that can be used for **solving problems offline** *or* for **real-time control**
 * A parallel linear solver for OCP
+
+</v-click>
 
 ---
 
 ## Related work: solvers for OCPs
 
-<div class="ns-c-tight">
-
-* DDP/FDDP[^0] - only for **unconstrained** OCPs
-
-**For constrained OCPs:**
-
-* FATROP[^1]: [interior-point method]{.text-blue}
-* CSQP[^jordana]: [sequential quadratic programming (SQP)]{.text-blue}
-* HPIPM[^Hpipm]: structure-exploiting [interior-point]{.text-blue} for QPs, used inside of Acados
-* ALTRO[^3]/ALTRO-C[^4]: based on ALM, but lacks simplicity and performance
-
-**Performance and robustness are still an issue.**
-
-</div>
+| *Unconstrained* | DDP, FDDP[^0] |
+| --- | ----- |
+| SQP | CSQP[^jordana] |
+| Interior-point | FATROP[^1], HPIPM[^Hpipm] (for QPs) |
+| ALM | ALTRO/ALTRO-C[^3][^4] (ALM+SQP refinement step), QPALM-OCP[^qpalm] (for QPs) |
 
 [^0]: C. Mastalli et al., ‘Crocoddyl: An Efficient and Versatile Framework for Multi-Contact Optimal Control’, 2020 IEEE International Conference on Robotics and Automation (ICRA), pp. 2536–2542, May 2020, doi: 10.1109/ICRA40945.2020.9196673.
 [^1]: L. Vanroye, A. Sathya, J. De Schutter, and W. Decré, ‘FATROP : A Fast Constrained Optimal Control Problem Solver for Robot Trajectory Optimization and Control’, in 2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), Detroit, MI, USA: IEEE, Oct. 2023. doi: 10.1109/IROS55552.2023.10342336.
@@ -430,6 +429,7 @@ ALM is easy to understand and get up and running.
 [^4]: B. E. Jackson, T. Punnoose, D. Neamati, K. Tracy, R. Jitosho, and Z. Manchester, ‘ALTRO-C: A Fast Solver for Conic Model-Predictive Control’, in 2021 IEEE International Conference on Robotics and Automation (ICRA), May 2021, pp. 7357–7364. doi: 10.1109/ICRA48506.2021.9561438.
 [^jordana]: A. Jordana, S. Kleff, A. Meduri, J. Carpentier, N. Mansard, and L. Righetti, ‘Stagewise Implementations of Sequential Quadratic Programming for Model-Predictive Control’, Dec. 2023.
 [^Hpipm]: G. Frison and M. Diehl, ‘HPIPM: a high-performance quadratic programming framework for model predictive control’, IFAC-PapersOnLine, vol. 53, no. 2, pp. 6563–6569, Jan. 2020.
+[^qpalm]: K. F. Løwenstein, D. Bernardini, and P. Patrinos, ‘QPALM-OCP: A Newton-Type Proximal Augmented Lagrangian Solver Tailored for Quadratic Programs Arising in Model Predictive Control’, IEEE Control Systems Letters, vol. 8, pp. 1349–1354, 2024, doi: 10.1109/LCSYS.2024.3410638.
 
 <style>
   .footnote-item {
@@ -543,7 +543,9 @@ where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}
 
 ---
 
-### The augmented Lagrangian method (ALM):
+### The augmented Lagrangian method (ALM)
+
+**Algorithm outline.** See Rockafellar '73[^1]
 
 1. minimise the **augmented Lagrangian function $\mathcal{L}_\mu$**:
    $$
@@ -563,17 +565,34 @@ where $f$ is the objective and $g: \mathbb{R}^n \to \mathbb{R}^m$, $h:\mathbb{R}
 
 </div>
 
+[^1]: R. T. Rockafellar, ‘A dual approach to solving nonlinear programming problems by unconstrained optimization’, Mathematical Programming, vol. 5, no. 1, pp. 354–373, Dec. 1973, doi: 10.1007/BF01580138.
+
+<style>
+  .footnote-item {
+    font-size: 12px;
+  }
+  .footnotes {
+    position: absolute;
+    bottom: 0;
+    margin-right: 4em;
+  }
+</style>
+
+<!-- 
+Rockafellar 73 is an extension of ALM to inequality constrained problems
+ -->
+
 ---
 
 ### ALM: computing directions
 
 $\mathcal{L}_\mu$ is only *continuously differentiable* but not *twice*-differentiable.
 
-No Newton method but [SEMI-SMOOTH NEWTON]{.text-orange .font-bold}, using a "**generalized Hessian**".
+No Newton method but [SEMI-SMOOTH NEWTON]{.text-orange .font-bold}, using a "**generalised Hessian**".
 
 <v-click>
 
-**Generalized Hessian:** given $P$ = projection matrix on active constraints, we can compute
+**Generalised Hessian:** given $P$ = projection matrix on active constraints, we can compute
 $$
 \begin{equation*}
   H_{\mu_k} = H + \textcolor{red}{\frac{1}{\mu_k}} (A^\top A + B^\top P B)
@@ -598,8 +617,7 @@ $$
 <v-click>
 
 * **What happens as $\mu_k \to 0$?** <span v-click=3 class="text-red-500 font-bold">(conditioning issues)</span>
-* Do we **need** to send $\mu_k \to 0$? <span v-click=3 class="text-green font-bold">No!</span>
-* Do we **need** to converge to a minimum? <span v-click=3 class="text-green font-bold">No!</span>
+* Do we **need** to send $\mu_k \to 0$? To converge to a minimum? <span v-click=3 class="text-green font-bold">No!</span>
 
 </v-click>
 
@@ -636,7 +654,7 @@ $$
   \end{bmatrix}
 $$
 
-* possible to **symmetrize the system** ($P$ is a projection matrix)
+* possible to **symmetrise the system** ($P$ is a projection matrix)
 * apply some [stable factorisation routine]{.text-green-600 .font-bold} (e.g. indefinite Cholesky)
 * **numerically stable** as we decrease $\mu$
 
@@ -660,7 +678,7 @@ $$
 **Original paper** just for *equality* constraints:
 
 * used in generic NLP solver **LANCELOT**
-* [Contribution:]{.font-bold .text-red-600} **we generalize** to inequalities (in papers)
+* [Contribution:]{.font-bold .text-red-600} **we generalise** to inequalities (in papers)
 * same method behind **ProxQP** (from coauthors)
 
 </v-click>
@@ -746,7 +764,7 @@ $$
 \end{equation*}
 $$
 
-* derivatives of the (regularized) $Q$-function (with $w=(u,y,\lambda,\nu)$):
+* derivatives of the regularised $Q$-function (with $w=(u,y,\lambda,\nu)$):
   $$
     \mathcal{K}_\mu = Q_{ww} =
     \underbrace{
@@ -784,7 +802,7 @@ The matrix K_\mu is symmetrizable
 * iterate forward: $[\delta u_t, \delta x_{t+1}, \delta \lambda_{t+1}, \delta\nu_t] = \mathbf{\Gamma}\delta x_t + \bm{\gamma}$ (using gains).
 * **Advantages:**
   * rather robust to stiff nonlinear dynamics,
-  * close to the literature about direct methods
+  * recovers the step from the direct multiple-shooting literature
 
 <hr>
 
@@ -794,7 +812,7 @@ The matrix K_\mu is symmetrizable
 
 * **same as linear**, but correct $\delta x$ using **true dynamics**
 * **Advantage:** dynamics satisfied closely after few iterates! (might be a drawback)
-* [Contribution:]{.text-pink-600 .font-bold} ALM + nonlinear rollout yields **multiple shooting**
+* [Contribution:]{.text-orange-600 .font-bold} ALM + nonlinear rollout yields **multiple shooting**
 
 </v-click>
 
@@ -844,10 +862,10 @@ layout: top-title
 
 * Solve problems within tolerance $\epsilon_\text{tol}$ for constraints & optimality
 * Assess multiple configurations:
-  * **ALTRO:** change subproblem tolerance
+  * **ALTRO:** change subproblem tolerance $\omega$
   * **IPOPT:** change Hessian approximation
   * **ProxDDP:** different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
-* *more details in the revised T-RO paper.*
+* *more details in the revised T-RO submission.*
 
 </v-clicks>
 
@@ -1145,7 +1163,7 @@ $$
 
 **Questions:**
 
-1. Can we get a Riccati gain for $t=0$ (for MPC purposes)? <span v-click=2 class="text-green"> **YES** </span>
+1. Can we get a Riccati gain $\mathbf{\Gamma}$ for $t=0$ (for MPC purposes)? <span v-click=2 class="text-green"> **YES** </span>
 2. Can we get a (parallel) **nonlinear rollout**? <span v-click=3 class="text-orange"> **NOT REALLY...** </span>
 
 </div>
@@ -1266,13 +1284,12 @@ layout: section
 
 * [Automatic differentiation]{.text-orange .font-bold} and machine/deep learning applications e.g. **policy learning**
   * **One contribution in this direction** (with Q. Le Lidec)
-  * AL might have the right properties for differentiable optimisation
-  * Already done for (infeasible) QPs, see Bambade et al.[^qplayer] - maybe nonconvex OCPs?
-  * Parallel LQ solver already introduced the right tools
+  * Use ProxDDP as a *differentiable motion generation layer*?
+  * See work on differentiating (infeasible) QPs by Bambade[^qplayer]
 
 * [Look at nonsmooth constraints:]{.text-orange .font-bold}
   * Time optimisation
-  * Complementarity and vanishing constraints: contact & frictional contact
+  * Complementarity constraints: contact & frictional contact
   * Look at randomised smoothing?
 
 </v-clicks>
