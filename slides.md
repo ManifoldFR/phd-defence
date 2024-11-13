@@ -209,7 +209,6 @@ $$
   \underset{\bm{x}, \bm{u}}{\operatorname{\mathrm{minimise}}}~%
   &J(\bm{x}, \bm{u}) = \sum_{t=0}^{N-1} \ell_t(x_t, u_t) + \ell_N(x_N) \\
   \mathrm{s.t.}~%
-  &x_0 = x^0 \\
   &f_t(x_t, u_t, x_{t+1}) = 0 \\
   &\textcolor{red}{h_t(x_t, u_t) \leqslant 0} \\
   &\textcolor{red}{h_N(x_N) \leqslant 0}.
@@ -309,13 +308,13 @@ layout: top-title
   * use a *generic* sparse solver (MUMPS, MA57...), can't exploit the specific pattern...
   * pragmatic design and tuning for *generic* problems
 * A tailored solver:
-  * faster by exploiting **specific structure**, become **[real-time.]{.text-red}**
+  * faster by exploiting **specific structure**, become [real-time.]{.text-red-600 .font-bold}
 
 </v-clicks>
 </div>
 
 <div class="center">
-  <img src="/ur5_short_sparsity.svg" alt="ur5_pattern" class="w-full center" />
+  <img src="/ur5_short_sparsity.svg" alt="ur5_pattern" class="w-100 center" />
 
   <p>
 
@@ -358,7 +357,7 @@ Literature for strategies on this goes back years. Main families of methods are:
 
 Our choice is ALM because:
 
-* no difficult aspects for implementation (unlike SQP)
+* no difficult aspects for implementation (unlike e.g. active-set QP)
 * fairly straightforward to **warm-start** (unlike IPM)
 * versatile (implicit dynamics, equality constraints, inequality constraints, more...)
 
