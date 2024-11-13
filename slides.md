@@ -361,7 +361,7 @@ ALM is easy to understand and get up and running.
 
 **Contributions**
 
-* A new, primal-dual ALM algorithm for solving OCP 
+* A new, primal-dual ALM algorithm for solving OCP
 * A performant library that can be used for **solving problems offline** *or* for **real-time control**
 * A parallel linear solver for OCP
 
@@ -1213,6 +1213,9 @@ layout: section
   * Standardise benchmarks around Pinocchio and AMPL? JuMP? CasADi?
 * Need for **battle testing** on real systems
   * How to benchmark MPC?
+* Solver for other OCP **topologies**:
+  * Tree-structured problems / scenario-tree MPC
+  * Cyclic OCPs (e.g. for walking)
 
 </v-clicks>
 
@@ -1402,3 +1405,21 @@ How to do solve this and do ALM? **Ingredients:**
 A collection of heuristics from IPOPT:
 
 <img src="/ipopt-heuristics.png" alt="ur10_ballistic" class="place-self-center">
+
+---
+
+## Preliminary results on other OCP topologies
+
+<div class="grid grid-cols-2">
+
+<img src="/gar-cyclic-lqr-2d.png" alt="cyclic-2d" class="place-self-center w-120" />
+
+<div class="mt-20">
+
+* 2D cyclic problem, $N=20$ knots
+* cyclic constraint $x_0 = x_{20}$
+* no initial condition $x_0$
+* no terminal constraint on $x_{20}$
+
+</div>
+</div>
