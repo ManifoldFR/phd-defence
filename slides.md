@@ -32,6 +32,7 @@ hideInToc: true
 Wilson Jallet<br>
 *LAAS-CNRS Gepetto & INRIA Willow*<br>
 <Email v="wjallet@laas.fr" />
+<Email v="wilson.jallet@inria.fr" />
 
 <div class="abs-br m-6 flex gap-2">
   <button @click="$slidev.nav.openInEditor()" title="Open in Editor" class="text-xl slidev-icon-btn opacity-50 !border-none !hover:text-white">
