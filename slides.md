@@ -167,7 +167,7 @@ hideInToc: true
   <div class="grid-col-span-1">
 
   * Model-based mapping from sensors, to **state**, to **control**
-  * For $u_t$: solve an <span v-mark.circle.red>**optimal control problem**</span> (OCP).
+  * For $u_t$: solve an **optimal control problem** (OCP).
   * Close the loop: **model-predictive control** (MPC)
 
   </div>
@@ -466,6 +466,8 @@ hideInToc: true
 
 ## Overview
 
+<hr>
+
 <Toc columns=1 minDepth="1" maxDepth="1" mode="all" />
 
 <!--
@@ -619,8 +621,8 @@ $$
 **Original paper** just for *equality* constraints:
 
 * used in generic NLP solver **LANCELOT**
-* [Contribution:]{.font-bold .text-red} **we generalize** to inequalities (in papers)
-* same method behind **ProxQP** (from my coauthors)
+* [Contribution:]{.font-bold .text-red-600} **we generalize** to inequalities (in papers)
+* same method behind **ProxQP** (from coauthors)
 
 </v-click>
 </div>
@@ -672,7 +674,7 @@ On GitHub: https://github.com/Simple-Robotics/proxsuite-nlp/
 
 <div v-click>
 
-* designed an ALM algorithm for nonlinear prog:
+* designed an ALM algorithm for nonlinear programming:
   * generic
   * simple
   * handles equality & inequality constraints
@@ -817,36 +819,6 @@ Only present 2 benchmark problems
 
 ---
 
-### SOLO-12 "Yoga" task
-
-A very nonlinear task for a whole-body model, 4 contact phases.
-
-<video controls loop autoplay class="h-10/12 place-self-center">
-  <source src="/solo12_lift_paw.mp4" type="video/mp4">
-</video>
-
----
-
-### SOLO-12 "Yoga" task: solve times vs problems solved
-
-<img src="/bench/solo_yoga_solve_times.svg" alt="solo_times" class="place-self-center" />
-
-<!--
-ALTRO is not present there because... no instances converged at all.
--->
-
-<!-- ### SOLO-12 "Yoga" task: performance profile
-
-<img src="/bench/solo_yoga_perfprofile_time.svg" alt="solo_times" class="place-self-center" />
-
-<div class="absolute bottom-0">
-  
-  [Performance ratio:]{.italic} how slower you are wrt fastest solver (in wall time) on a given problem.
-</div> -->
-
-
----
-
 ### UR10 "ballistic" task
 
 <div class="ns-c-tight">
@@ -872,6 +844,58 @@ ALTRO is not present there because... no instances converged at all.
 
 ---
 
+### SOLO-12 "Yoga" task
+
+A very nonlinear task for a whole-body model, 4 contact phases.
+
+<video controls loop autoplay class="h-10/12 place-self-center">
+  <source src="/solo12_lift_paw.mp4" type="video/mp4">
+</video>
+
+---
+
+### SOLO-12 "Yoga" task: solve times vs problems solved
+
+<img src="/bench/solo_yoga_solve_times.svg" alt="solo_times" class="w-150 place-self-center" />
+
+**Notes:**
+
+* ALTRO failed on all instances
+* ProxDDP w/ nonlinear rollout always failed; results on plot are *linear* rollout only
+
+<!--
+ALTRO is not present there because... no instances converged at all.
+-->
+
+<!-- ### SOLO-12 "Yoga" task: performance profile
+
+<img src="/bench/solo_yoga_perfprofile_time.svg" alt="solo_times" class="place-self-center" />
+
+<div class="absolute bottom-0">
+  
+  [Performance ratio:]{.italic} how slower you are wrt fastest solver (in wall time) on a given problem.
+</div> -->
+
+---
+
+### UR5 "Avoidance" task
+
+A collision avoidance task.
+
+<video controls loop autoplay class="h-10/12 place-self-center">
+  <source src="/ur_slalom.mp4" type="video/mp4">
+</video>
+
+---
+
+### UR5 "Avoidance" task: solve times vs problems solved
+
+<img src="/bench/ur_slalom_solve_times.svg" alt="ur10_ballistic" class="place-self-center">
+
+**Note:** IPOPT failed on all instances.
+
+---
+
 ### ProxDDP and benchmarks: conclusion
 
 [Contributions recap:]{.text-orange .font-bold}
@@ -883,14 +907,14 @@ ALTRO is not present there because... no instances converged at all.
 <hr>
 <v-click>
 
-ProxDDP overall performs well on the benchmark suite.
+**Benchmarks:** ProxDDP overall performs well on the benchmark suite.
 
 * Competitive with IPOPT on the test set (in solve time)
 * More robust across problems than ALTRO
 
 Benchmarks (including wrappers for ALTRO & IPOPT) available online:
 
-<p class="text-center">
+<p class="text-center text-blue">
 
 https://github.com/Simple-Robotics/aligator-bench
 </p>
@@ -913,7 +937,7 @@ layout: section
 
 **So far:**
 
-* Established DDP recursion-like algo for solving constrained OCPs
+* Established DDP recursion-like method for solving constrained OCPs
 * Have to **solve larger linear systems at each stage**
 * Provided open-source **fast C++ implementations**
 * Validated on test bench against other solvers
@@ -927,12 +951,12 @@ DDP-type methods (or any method based on **Riccati**), have a *major* limitation
 * inherently **linear in time** $\mathcal{O}(N)$
 * no way of exploiting **multicore architectures**! (except evaluating e.g. gradients in parallel)
 
-<figure class="ml-10">
-  <img src="/riccati-serial.drawio.svg" alt="serial_riccati" class="w-190"/>
+<figure>
+  <img src="/riccati-serial.drawio.svg" alt="serial_riccati" class="place-self-center w-150"/>
 </figure>
 
 <v-click>
-<span class="text-blue-700 ns-c-tight">
+<span class="text-blue-700">
 
 **Questions**
 
@@ -943,7 +967,7 @@ DDP-type methods (or any method based on **Riccati**), have a *major* limitation
 </span>
 </v-click>
 
-<div class="absolute bottom-0 text-0.7em mr-20">
+<div class="absolute bottom-0 text-0.6em mr-20">
   
   **Reference papers for this section:**
 
@@ -958,12 +982,30 @@ DDP-type methods (or any method based on **Riccati**), have a *major* limitation
 
 * Focus on the structure-exploiting **linear solver**, not the nonlinear problem
 * Our aim: **exact** method to solve the linear problem/Newton step.
-  * iterative approaches (e.g. conjugate gradient) $\Rightarrow$ appropriate for e.g. GPUs
+  * iterative approaches (e.g. conjugate gradient) $\Rightarrow$ appropriate for e.g. GPUs[^1]
 * The main idea is **"Parametrise to parallelise"**
 * [Contributions:]{.text-orange .font-bold}
-  * algo for **exact method**
+  * algorithm for **exact method**
   * deployment for MPC
   * modern C++ implementation ready for use
+
+[^1]: E. Adabag, M. Atal, W. Gerard, and B. Plancher, ‘MPCGPU: Real-Time Nonlinear Model Predictive Control through Preconditioned Conjugate Gradient on the GPU’, in 2024 IEEE International Conference on Robotics and Automation (ICRA), Yokohama, Japan, May 2024.
+
+<style>
+  .footnote-item {
+    font-size: 12px;
+  }
+  .footnote-item p {
+    font-size: 12px;
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+  .footnotes {
+    position: absolute;
+    bottom: 0;
+    margin-right: 4em;
+  }
+</style>
 
 ---
 
@@ -1013,14 +1055,14 @@ $$
 
 #### The general case
 
-<figure class="w-190 ml-30">
-  <img src="/riccati-parallel-gen.drawio.svg" alt="parallel_riccati" />
+<figure>
+  <img src="/riccati-parallel-gen.drawio.svg" alt="parallel_riccati" class="w-200 place-self-center" />
 </figure>
 
+**The consensus problem:** block-sparse problem with *block-tridiagonal pattern:*
 <div v-click class="grid grid-cols-2">
 <div>
 
-**The consensus problem:** block-sparse problem with *block-tridiagonal pattern:*
 $$
 \begin{bmatrix}
   \circ & \maltese \\
@@ -1114,7 +1156,7 @@ columns: is-4
 <div>
 
 * Fixed flight/contact phases
-* Constraints: joint position, torque limits, landing $z(t_\textsf{contact}) = 0$...
+* **Constraints:** joint position, torque limits, landing $z(t_\textsf{contact}) = 0$...
 * Receding-horizon control, **whole problem rotates (including constraints)**
 * 1kHz loop with Riccati gain
 * Real-time on modern CPU, using the **parallel Riccati recursion (~5ms/iteration)**
@@ -1227,9 +1269,9 @@ hideInToc: true
 hideInToc: true
 ---
 
-## Backup slides
+# Backup slides
 
-### ALM and the prox-point iteration
+## ALM and the prox-point iteration
 
 **Instead...** Rewrite problem as a **saddle-point**:
 $$
@@ -1253,7 +1295,7 @@ Use the **proximal-point algorithm** in the *dual* problem:
 
 ---
 
-### ALM and more generic constraints
+## ALM and more generic constraints
 
 $$
 \begin{aligned}
@@ -1355,14 +1397,8 @@ How to do solve this and do ALM? **Ingredients:**
 
 ---
 
-### Extra benchmark
+## On heuristics
 
-#### UR5 "Slalom"
+A collection of heuristics from IPOPT:
 
-<video controls loop autoplay class="h-10/12 place-self-center">
-  <source src="/ur_slalom.mp4" type="video/mp4">
-</video>
-
----
-
-<img src="/bench/ur_slalom_solve_times.svg" alt="ur10_ballistic" class="place-self-center">
+<img src="/ipopt-heuristics.png" alt="ur10_ballistic" class="place-self-center">
