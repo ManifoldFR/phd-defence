@@ -845,8 +845,8 @@ layout: top-title
 
 * Solve problems within tolerance $\epsilon_\text{tol}$ for constraints & optimality
 * Assess multiple configurations:
-  * **ALTRO:** (ALTRO:0) subproblem tol. = $10^{-4}$ / (ALTRO:1) tol. = $\epsilon_\text{tol}$
-  * **IPOPT:** (IPOPT:0) Gauss-Newton Hessian / (IPOPT:1) L-BFGS approximation
+  * **ALTRO:** change subproblem tolerance
+  * **IPOPT:** change Hessian approximation
   * **ProxDDP:** different initial AL penalty $\mu_0 > 0$, linear vs. nonlinear rollout, linesearch parameters...
 * *more details in the revised T-RO paper.*
 
