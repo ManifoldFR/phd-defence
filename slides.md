@@ -447,6 +447,14 @@ Can we design a new solver for constrained OCPs that:
   }
 </style>
 
+<!--
+Talk about the different options here.
+
+CSQP -> requires a QP solver, like HPIPM, QPALM-OCP
+* associated paper (cited here) implements some OSQP-type method
+
+-->
+
 ---
 layout: top-title-two-cols
 hideInToc: true
